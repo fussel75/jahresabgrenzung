@@ -1,0 +1,28 @@
+{
+  "name": "jahresabgrenzung",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Periodengerechte Abgrenzung von Bauvorhaben über den Jahreswechsel (HGB-orientiert)",
+  "license": "UNLICENSED",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build:shared": "npm run build --workspace @jahresabgrenzung/shared",
+    "test": "npm run test --workspace @jahresabgrenzung/shared",
+    "test:watch": "npm run test:watch --workspace @jahresabgrenzung/shared",
+    "dev:api": "npm run dev --workspace @jahresabgrenzung/api",
+    "dev:web": "npm run dev --workspace @jahresabgrenzung/web",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "seed": "npm run seed --workspace @jahresabgrenzung/api"
+  },
+  "devDependencies": {
+    "prisma": "^5.22.0",
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

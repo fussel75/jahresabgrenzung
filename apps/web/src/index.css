@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Platzhalter-Styles bis zum Frontend-Ausbau (Schritt 7). */
+.app-placeholder {
+  font-family: system-ui, sans-serif;
+  max-width: 40rem;
+  margin: 4rem auto;
+  padding: 0 1rem;
+}
