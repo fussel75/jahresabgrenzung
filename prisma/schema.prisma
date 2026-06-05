@@ -1,0 +1,84 @@
+// Prisma-Schema für die Jahresabgrenzung-App.
+//
+// Lokale Entwicklung: SQLite (siehe DATABASE_URL in .env).
+// Produktiv: PostgreSQL — dafür `provider = "postgresql"` setzen.
+//
+// Hinweis zu SQLite (pragmatische Defaults, siehe README "Bekannte Limitierungen"):
+//   * SQLite unterstützt KEINE Prisma-Enums. Die Enum-Felder sind daher als
+//     `String` modelliert; die erlaubten Werte sind als Kommentar dokumentiert
+//     und werden über die Zod-Schemas in `packages/shared` validiert.
+//   * SQLite unterstützt die native Annotation `@db.Decimal(12, 2)` nicht.
+//     Beträge sind als `Decimal` ohne native Annotation modelliert.
+//   Für PostgreSQL können echte `enum`-Blöcke und `@db.Decimal(12, 2)` ergänzt
+//   werden (vgl. SPEC.md §3).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Projekt {
+  id                        String           @id @default(cuid())
+  projektnummer             String           @unique
+  bezeichnung               String
+  kunde                     String
+  kundenadresse             String?
+  startdatumGeplant         DateTime
+  enddatumGeplant           DateTime
+  startdatumIst             DateTime?
+  enddatumIst               DateTime?
+  auftragssummeNetto        Decimal
+  gesamtkostenGeplant       Decimal
+  istKostenStichtag         Decimal          @default(0)
+  fertigstellungGradManuell Float? // 0.0 - 1.0, optional
+  status                    String // ProjektStatus: ANGEBOT | BEAUFTRAGT | LAUFEND | ABGESCHLOSSEN | STORNIERT
+  gewerk                    String // Gewerk: ZIMMEREI | DACHDECKEREI | SHK | GEMISCHT
+  notizen                   String?
+  zahlungen                 Zahlung[]
+  kostenpositionen          Kostenposition[]
+  erstelltAm                DateTime         @default(now())
+  geaendertAm               DateTime         @updatedAt
+}
+
+model Zahlung {
+  id           String  @id @default(cuid())
+  projektId    String
+  projekt      Projekt @relation(fields: [projektId], references: [id], onDelete: Cascade)
+  datum        DateTime
+  betragNetto  Decimal
+  art          String // ZahlungsArt: ANZAHLUNG | ABSCHLAG | SCHLUSSRECHNUNG | STORNO
+  rechnungsNr  String?
+  beschreibung String?
+}
+
+model Kostenposition {
+  id           String   @id @default(cuid())
+  projektId    String
+  projekt      Projekt  @relation(fields: [projektId], references: [id], onDelete: Cascade)
+  datum        DateTime
+  betragNetto  Decimal
+  art          String // KostenArt: MATERIAL | LOHN | SUBUNTERNEHMER | FREMDLEISTUNG | SONSTIGES
+  beschreibung String?
+}
+
+model Geschaeftsjahr {
+  id            String   @id @default(cuid())
+  jahr          Int      @unique
+  beginn        DateTime // i.d.R. 01.01.
+  ende          DateTime // i.d.R. 31.12.
+  abgeschlossen Boolean  @default(false)
+}
+
+model Einstellungen {
+  id                     String  @id @default(cuid())
+  standardMethode        String  @default("COMPLETED_CONTRACT")
+  steuerberaterName      String?
+  steuerberaterAdresse   String?
+  steuerberaterEmail     String?
+  kontoUnfertigeLeistung String? // z.B. "0860" — konfigurierbar, kein Hardcode
+  kontoBestandsveraend   String? // z.B. "8990"
+}
