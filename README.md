@@ -5,8 +5,9 @@ Jahreswechsel für die **FriStD-Bau ZuB GmbH & Co. KG** (HGB-orientiert).
 
 > **Status:** In Umsetzung gemäß [SPEC.md](SPEC.md) §12.
 > Aktuell abgeschlossen: Schritt 1 (Repo-Setup), Schritt 2 (Prisma-Schema +
-> Migration), Schritt 3 (Abgrenzungs-Service mit Unit-Tests, TDD).
-> Frontend, API-Routen und Exporte folgen.
+> Migration), Schritt 3 (Abgrenzungs-Service mit Unit-Tests, TDD),
+> Schritt 4 (API-Routen + Zod), Schritt 5 (Basic Auth), Schritt 6 (Seed).
+> Es folgen: Frontend (Schritt 7) und Exporte (Schritt 8).
 
 ## Projektstruktur (npm-Workspaces-Monorepo)
 
@@ -29,8 +30,25 @@ Voraussetzung: Node.js ≥ 20.
 npm install
 cp .env.example .env          # Werte anpassen (AUTH_USER/AUTH_PASSWORD!)
 npm run prisma:migrate        # SQLite-DB + Migration anlegen
+npm run seed                  # 9 Beispielprojekte (Q4/2026–Q1/2027)
 npm test                      # Abgrenzungslogik (Vitest)
+npm run dev:api               # API auf http://localhost:3000
 ```
+
+### API-Überblick (alles hinter HTTP Basic Auth, außer `/api/health`)
+
+| Methode | Pfad | Zweck |
+|---|---|---|
+| GET | `/api/health` | Health-Check (ohne Auth, fürs Monitoring) |
+| GET/POST | `/api/projekte` | Projekte auflisten (Filter: `status`, `gewerk`, `kunde`, `nurAbzugrenzende`+`geschaeftsjahrId`) / anlegen |
+| GET/PUT/DELETE | `/api/projekte/:id` | Projekt lesen (inkl. Zahlungen/Kosten) / ändern / löschen |
+| POST | `/api/projekte/:id/zahlungen` | Zahlung anlegen |
+| POST | `/api/projekte/:id/kostenpositionen` | Kostenposition anlegen |
+| DELETE | `/api/zahlungen/:id`, `/api/kostenpositionen/:id` | Einzeleintrag löschen |
+| CRUD | `/api/geschaeftsjahre` | Geschäftsjahre verwalten |
+| GET/PUT | `/api/einstellungen` | Standardmethode, Steuerberater, Konten |
+| GET | `/api/abgrenzung/:geschaeftsjahrId?methode=…` | Abgrenzungsbericht (alle 4 Methoden) |
+| POST | `/api/import/hapak` | HAPAK-Import (Skeleton, V1 nicht aktiv) |
 
 ## Die vier Abgrenzungsmethoden
 

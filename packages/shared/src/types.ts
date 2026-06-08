@@ -82,29 +82,37 @@ export const kostenpositionSchema = z.object({
 });
 export type KostenpositionInput = z.infer<typeof kostenpositionSchema>;
 
-export const projektSchema = z
-  .object({
-    projektnummer: z.string().min(1, 'Projektnummer erforderlich'),
-    bezeichnung: z.string().min(1, 'Bezeichnung erforderlich'),
-    kunde: z.string().min(1, 'Kunde erforderlich'),
-    kundenadresse: z.string().optional().nullable(),
-    startdatumGeplant: isoDate,
-    enddatumGeplant: isoDate,
-    startdatumIst: isoDate.optional().nullable(),
-    enddatumIst: isoDate.optional().nullable(),
-    auftragssummeNetto: geldBetrag.nonnegative(),
-    gesamtkostenGeplant: geldBetrag.nonnegative(),
-    istKostenStichtag: geldBetrag.nonnegative().default(0),
-    fertigstellungGradManuell: z.number().min(0).max(1).optional().nullable(),
-    status: z.nativeEnum(ProjektStatus),
-    gewerk: z.nativeEnum(Gewerk),
-    notizen: z.string().optional().nullable(),
-  })
-  .refine((p) => p.enddatumGeplant >= p.startdatumGeplant, {
+export const projektBaseSchema = z.object({
+  projektnummer: z.string().min(1, 'Projektnummer erforderlich'),
+  bezeichnung: z.string().min(1, 'Bezeichnung erforderlich'),
+  kunde: z.string().min(1, 'Kunde erforderlich'),
+  kundenadresse: z.string().optional().nullable(),
+  startdatumGeplant: isoDate,
+  enddatumGeplant: isoDate,
+  startdatumIst: isoDate.optional().nullable(),
+  enddatumIst: isoDate.optional().nullable(),
+  auftragssummeNetto: geldBetrag.nonnegative(),
+  gesamtkostenGeplant: geldBetrag.nonnegative(),
+  istKostenStichtag: geldBetrag.nonnegative().default(0),
+  fertigstellungGradManuell: z.number().min(0).max(1).optional().nullable(),
+  status: z.nativeEnum(ProjektStatus),
+  gewerk: z.nativeEnum(Gewerk),
+  notizen: z.string().optional().nullable(),
+});
+
+/** Vollständiges Schema für Neuanlage (mit Plausibilitätsprüfung). */
+export const projektSchema = projektBaseSchema.refine(
+  (p) => p.enddatumGeplant >= p.startdatumGeplant,
+  {
     message: 'Geplantes Enddatum muss nach dem Startdatum liegen',
     path: ['enddatumGeplant'],
-  });
+  },
+);
 export type ProjektInputDTO = z.infer<typeof projektSchema>;
+
+/** Teil-Update: alle Felder optional. */
+export const projektUpdateSchema = projektBaseSchema.partial();
+export type ProjektUpdateDTO = z.infer<typeof projektUpdateSchema>;
 
 export const geschaeftsjahrSchema = z
   .object({
