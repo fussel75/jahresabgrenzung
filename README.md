@@ -6,8 +6,9 @@ Jahreswechsel für die **FriStD-Bau ZuB GmbH & Co. KG** (HGB-orientiert).
 > **Status:** In Umsetzung gemäß [SPEC.md](SPEC.md) §12.
 > Aktuell abgeschlossen: Schritt 1 (Repo-Setup), Schritt 2 (Prisma-Schema +
 > Migration), Schritt 3 (Abgrenzungs-Service mit Unit-Tests, TDD),
-> Schritt 4 (API-Routen + Zod), Schritt 5 (Basic Auth), Schritt 6 (Seed).
-> Es folgen: Frontend (Schritt 7) und Exporte (Schritt 8).
+> Schritt 4 (API-Routen + Zod), Schritt 5 (Basic Auth), Schritt 6 (Seed),
+> Schritt 7 (Frontend: Dashboard, Projektliste/-detail, Gantt, Bericht,
+> Import, Einstellungen). Es folgen: Exporte Excel/PDF (Schritt 8).
 
 ## Projektstruktur (npm-Workspaces-Monorepo)
 
@@ -33,7 +34,12 @@ npm run prisma:migrate        # SQLite-DB + Migration anlegen
 npm run seed                  # 9 Beispielprojekte (Q4/2026–Q1/2027)
 npm test                      # Abgrenzungslogik (Vitest)
 npm run dev:api               # API auf http://localhost:3000
+npm run dev:web               # Frontend (Vite) auf http://localhost:5173
 ```
+
+Im Dev laufen API (3000) und Frontend (5173) getrennt; Vite proxyt `/api`
+an die API. Für Produktion `npm run build --workspace @jahresabgrenzung/web`
+ausführen — die API liefert dann das gebaute Frontend aus `apps/web/dist` aus.
 
 ### API-Überblick (alles hinter HTTP Basic Auth, außer `/api/health`)
 
