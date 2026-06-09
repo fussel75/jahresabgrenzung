@@ -42,15 +42,11 @@ Quellcode baust.
 
 ## 1. Traefik in Hostinger bereitstellen (einmalig)
 
-Im Docker Manager auf **„Traefik bereitstellen"** klicken (Banner unten).
-Das legt das Docker-Netzwerk **`traefik-proxy`** und den Cert-Resolver
-**`letsencrypt`** an. Prüfen im Terminal:
-
-```bash
-docker network ls | grep traefik-proxy
-```
-
-Es muss eine Zeile mit `traefik-proxy` erscheinen.
+Im Docker Manager auf **„Traefik bereitstellen"** klicken (Banner unten) und
+die ACME-E-Mail bestätigen. Hostingers Traefik läuft im **Host-Netzwerk-Modus**
+(Endpunkt `websecure`/:443, Cert-Resolver `letsencrypt`, HTTP-Challenge) und
+erkennt Dienste automatisch über die Docker-Labels. Es wird **kein** eigenes
+Bridge-Netzwerk benötigt. Prüfen, dass das Traefik-Projekt „In Betrieb" ist.
 
 ---
 
@@ -181,8 +177,8 @@ Migrationen laufen beim Start automatisch; die Daten im Volume bleiben erhalten.
 
 | Symptom | Ursache / Lösung |
 |---|---|
-| `network traefik-proxy not found` | Traefik wurde noch nicht bereitgestellt (Schritt 1). |
-| Kein HTTPS / Zertifikatsfehler | DNS prüfen (`dig +short jahresabgrenzung.fristd-bau.com` → `187.77.67.33`), 1–3 Min. warten, `docker compose logs app` und die Traefik-Logs prüfen. |
+| Deploy schlägt fehl mit Netzwerkfehler | Es darf KEIN `networks:`/`traefik-proxy`-Block in der Compose stehen (Hostinger-Traefik nutzt Host-Modus). |
+| Kein HTTPS / Zertifikatsfehler | DNS prüfen (`dig +short jahresabgrenzung.fristd-bau.com` → `187.77.67.33`), Port 80 muss erreichbar sein (HTTP-Challenge), 1–3 Min. warten, Traefik-Logs prüfen. |
 | `502 Bad Gateway` | App-Container noch nicht bereit/abgestürzt → `docker compose logs app`. |
 | Login akzeptiert nichts | `AUTH_USER`/`AUTH_PASSWORD` in `.env` prüfen, dann `docker compose up -d`. |
 | Daten weg nach Update | Niemals `docker compose down -v` verwenden — das `-v` löscht Volumes! |
@@ -192,8 +188,8 @@ Migrationen laufen beim Start automatisch; die Daten im Volume bleiben erhalten.
 ## Architektur in Kürze
 
 ```
-Internet ──443──> [ Traefik (Hostinger) ] ──traefik-proxy──> [ app:3000 ] ──> SQLite (/data)
-                   Auto-HTTPS, Routing            Node/Express, liefert API + Frontend
+Internet ──443──> [ Traefik (Hostinger, Host-Modus) ] ──Docker-Provider──> [ app:3000 ] ──> SQLite (/data)
+                   Auto-HTTPS, Routing per Labels                Node/Express, liefert API + Frontend
 ```
 
 - Nur Traefik ist nach außen offen; die App ist nur intern erreichbar.

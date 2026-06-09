@@ -1,8 +1,12 @@
 # ====================================================================
-# EINFACHSTER WEG — In Hostinger Docker Manager unter "Compose" einfügen.
+# EINFACHSTER WEG — In Hostinger Docker Manager unter "Compose" ->
+# "Manuell erstellen" einfügen (Projektname z.B. "jahresabgrenzung").
 # Es wird das fertige Image von GitHub gezogen (nichts wird gebaut).
 #
-# Vorher 1x in Hostinger "Traefik bereitstellen" klicken.
+# Hostingers Traefik läuft im HOST-Netzwerk-Modus und findet den Dienst
+# automatisch über die Labels — daher KEIN networks-Block nötig.
+#
+# Vorher 1x in Hostinger "Traefik bereitstellen" geklickt haben.
 # NUR EINE ZEILE anpassen:  AUTH_PASSWORD
 # ====================================================================
 
@@ -19,19 +23,12 @@ services:
       - NODE_ENV=production
     volumes:
       - app_data:/data
-    networks:
-      - traefik-proxy
     labels:
       - traefik.enable=true
-      - traefik.docker.network=traefik-proxy
       - traefik.http.routers.jahresabgrenzung.rule=Host(`jahresabgrenzung.fristd-bau.com`)
       - traefik.http.routers.jahresabgrenzung.entrypoints=websecure
       - traefik.http.routers.jahresabgrenzung.tls.certresolver=letsencrypt
       - traefik.http.services.jahresabgrenzung.loadbalancer.server.port=3000
-
-networks:
-  traefik-proxy:
-    external: true
 
 volumes:
   app_data:
