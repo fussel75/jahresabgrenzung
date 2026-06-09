@@ -1,0 +1,20 @@
+# Caddy reverse proxy mit automatischem HTTPS (Let's Encrypt).
+# APP_DOMAIN kommt aus der .env (z.B. abgrenzung.fristd-bau.de).
+#
+# Voraussetzung: Ein DNS-A-Record für APP_DOMAIN zeigt auf die VPS-IP und
+# die Ports 80 + 443 sind in der Firewall offen. Caddy holt das Zertifikat
+# dann vollautomatisch.
+
+{$APP_DOMAIN} {
+	encode gzip
+	reverse_proxy app:3000
+}
+
+# --- Fallback ohne Domain (nur Server-IP) ---
+# Wenn ihr (noch) keine Domain habt, die obigen Zeilen auskommentieren und
+# stattdessen den folgenden Block aktivieren. Caddy nutzt dann ein internes
+# Zertifikat (Browser zeigt eine einmalige Warnung) bzw. http:
+#
+# :80 {
+# 	reverse_proxy app:3000
+# }

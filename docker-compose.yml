@@ -1,0 +1,39 @@
+# Produktions-Setup: App (Node + SQLite) hinter Caddy (automatisches HTTPS).
+# Werte kommen aus der .env-Datei (siehe .env.production.example).
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # SQLite-Datei liegt im persistenten Volume (absoluter Pfad = eindeutig).
+      - DATABASE_URL=file:/data/jahresabgrenzung.db
+      - PORT=3000
+      - NODE_ENV=production
+    volumes:
+      - app_data:/data
+    expose:
+      - "3000"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - APP_DOMAIN=${APP_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  app_data: # SQLite-Datenbank (Backup: siehe DEPLOY.md)
+  caddy_data: # Caddy-Zertifikate
+  caddy_config:

@@ -1,0 +1,9 @@
+# Shell-Skripte müssen LF behalten, sonst scheitert der Shebang in Linux/Docker.
+*.sh text eol=lf
+deploy/entrypoint.sh text eol=lf
+
+# Container-/Config-Dateien ebenfalls mit LF.
+Dockerfile text eol=lf
+Caddyfile text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf

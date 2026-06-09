@@ -58,8 +58,17 @@ an die API.
 
 ## Deployment (VPS / Produktion)
 
-Das Backend liefert in Produktion das gebaute Frontend mit aus — es läuft also
-**ein** Node-Prozess.
+> **Empfohlen: Docker + Caddy (automatisches HTTPS).** Die vollständige,
+> schrittweise Anleitung steht in **[DEPLOY.md](DEPLOY.md)** — inkl. DNS,
+> Backup, Updates und Fehlerbehebung. Kurzfassung:
+>
+> ```bash
+> cp .env.production.example .env   # APP_DOMAIN, AUTH_USER, AUTH_PASSWORD setzen
+> docker compose up -d --build
+> ```
+
+Alternativ **nativ** ohne Docker: Das Backend liefert in Produktion das gebaute
+Frontend mit aus — es läuft also **ein** Node-Prozess.
 
 ```bash
 # 1) Abhängigkeiten + Frontend bauen

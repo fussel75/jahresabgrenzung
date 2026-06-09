@@ -1,0 +1,21 @@
+node_modules
+**/node_modules
+**/dist
+*.tsbuildinfo
+
+# Lokale DB / Logs / Secrets niemals ins Image
+prisma/*.db
+prisma/*.db-journal
+*.sqlite
+*.sqlite3
+.env
+.env.local
+*.log
+
+# Git / Editor / Tooling
+.git
+.gitignore
+.claude
+.vscode
+.idea
+coverage
