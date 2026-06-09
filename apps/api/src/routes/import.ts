@@ -1,17 +1,29 @@
 import { Router } from 'express';
+import { asyncHandler } from '../helpers.js';
+import { hapakVerbindungstest } from '../hapak/preview.js';
 
 /**
- * Import-Schnittstelle (Skeleton, siehe SPEC.md §5 / §11).
+ * Import-Schnittstelle.
  *
- * Die tatsächliche HAPAK-DBF-Anbindung ist für V1 bewusst NICHT umgesetzt —
- * hier steht nur der vorbereitete Endpoint. Der CSV/Excel-Import wird im
- * Frontend (Vorschau vor dem Speichern) bzw. in einem späteren Schritt ergänzt.
+ * `/hapak/test` ist ein read-only Verbindungstest zum NAS (Synology
+ * FileStation): meldet sich an, liest den Daten-Ordner, lädt DOKUMENT.DBF und
+ * zeigt Spalten + erste Zeilen — speichert nichts.
+ *
+ * Der eigentliche HAPAK-Import (Projekte/Rechnungen) folgt darauf aufbauend.
  */
 export const importRouter = Router();
 
+importRouter.post(
+  '/hapak/test',
+  asyncHandler(async (_req, res) => {
+    const ergebnis = await hapakVerbindungstest();
+    res.status(ergebnis.ok ? 200 : 502).json(ergebnis);
+  }),
+);
+
 importRouter.post('/hapak', (_req, res) => {
   res.status(501).json({
-    fehler: 'HAPAK-Import in V1 nicht implementiert',
-    hinweis: 'Endpoint ist als Skeleton vorbereitet (siehe SPEC.md §11).',
+    fehler: 'HAPAK-Import noch nicht aktiv',
+    hinweis: 'Zuerst Verbindungstest über POST /api/import/hapak/test ausführen.',
   });
 });

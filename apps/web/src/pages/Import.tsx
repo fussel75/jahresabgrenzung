@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { api } from '../api';
+import { api, type HapakTestErgebnis } from '../api';
 import { Card, LeerHinweis } from '../components/ui';
 
 /** Erwartete CSV-Spalten (Semikolon-getrennt, Kopfzeile). */
@@ -105,14 +105,104 @@ export function Import() {
         </Card>
       )}
 
-      <Card>
-        <h2 className="font-semibold text-anthrazit">HAPAK-Import (DBF)</h2>
-        <LeerHinweis>
-          Schnittstelle ist vorbereitet (Endpoint <code>POST /api/import/hapak</code>),
-          aber in V1 bewusst noch nicht aktiv. Die tatsächliche HAPAK-Integration
-          erfolgt als optionaler späterer Schritt.
-        </LeerHinweis>
-      </Card>
+      <HapakKarte />
     </div>
   );
+}
+
+function HapakKarte() {
+  const [laedt, setLaedt] = useState(false);
+  const [ergebnis, setErgebnis] = useState<HapakTestErgebnis | null>(null);
+  const [fehler, setFehler] = useState<string | null>(null);
+
+  async function testen() {
+    setLaedt(true);
+    setFehler(null);
+    setErgebnis(null);
+    try {
+      setErgebnis(await api.hapakTest());
+    } catch (e) {
+      setFehler((e as Error).message);
+    } finally {
+      setLaedt(false);
+    }
+  }
+
+  return (
+    <Card>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="font-semibold text-anthrazit">HAPAK-Anbindung (Synology/NAS)</h2>
+        <button
+          onClick={testen}
+          disabled={laedt}
+          className="rounded-lg bg-anthrazit px-3 py-2 text-sm font-semibold text-white hover:bg-dunkelblau disabled:opacity-50"
+        >
+          {laedt ? 'Teste …' : 'Verbindung testen (read-only)'}
+        </button>
+      </div>
+      <p className="mt-1 text-sm text-gray-600">
+        Liest read-only über die Synology-FileStation-API. Der Test meldet sich an, liest den
+        Daten-Ordner und zeigt die Spalten von <code>DOKUMENT.DBF</code> — es wird nichts gespeichert.
+      </p>
+
+      {fehler && <p className="mt-3 text-sm text-red-600">Fehler: {fehler}</p>}
+
+      {ergebnis && (
+        <div className="mt-4 space-y-4">
+          <ul className="space-y-1 text-sm">
+            {ergebnis.schritte.map((s, i) => (
+              <li key={i} className="flex items-start gap-2">
+                <span>{s.ok ? '✅' : '❌'}</span>
+                <span className="font-medium">{s.schritt}:</span>
+                <span className="text-gray-600">{s.info}</span>
+              </li>
+            ))}
+          </ul>
+
+          {ergebnis.vorschau && (
+            <div className="overflow-x-auto">
+              <p className="mb-1 text-xs text-gray-500">
+                Vorschau {ergebnis.vorschau.felder.length} Felder · erste{' '}
+                {ergebnis.vorschau.zeilen.length} von {ergebnis.vorschau.anzahlGesamt} Datensätzen
+              </p>
+              <table className="w-full text-xs">
+                <thead className="border-b bg-gray-50 text-left text-gray-500">
+                  <tr>
+                    {ergebnis.vorschau.felder.map((f) => (
+                      <th key={f} className="p-1 whitespace-nowrap">{f}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {ergebnis.vorschau.zeilen.map((z, i) => (
+                    <tr key={i} className="border-b border-gray-100">
+                      {ergebnis.vorschau!.felder.map((f) => (
+                        <td key={f} className="max-w-[14rem] truncate p-1" title={String(z[f] ?? '')}>
+                          {formatWert(z[f])}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {!ergebnis && !fehler && (
+        <LeerHinweis>
+          Noch nicht getestet. Voraussetzung: die Variablen <code>HAPAK_NAS_ID</code>,{' '}
+          <code>HAPAK_NAS_USER</code>, <code>HAPAK_NAS_PASS</code> sind auf dem Server gesetzt.
+        </LeerHinweis>
+      )}
+    </Card>
+  );
+}
+
+function formatWert(v: unknown): string {
+  if (v == null) return '';
+  if (v instanceof Date) return v.toISOString().slice(0, 10);
+  if (typeof v === 'object') return JSON.stringify(v);
+  return String(v);
 }

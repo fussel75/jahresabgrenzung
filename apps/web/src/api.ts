@@ -67,6 +67,22 @@ export interface Einstellungen {
   kontoBestandsveraend?: string | null;
 }
 
+export interface HapakTestSchritt {
+  schritt: string;
+  ok: boolean;
+  info: string;
+}
+
+export interface HapakTestErgebnis {
+  ok: boolean;
+  schritte: HapakTestSchritt[];
+  vorschau?: {
+    felder: string[];
+    anzahlGesamt: number;
+    zeilen: Record<string, unknown>[];
+  };
+}
+
 // --- Fetch-Wrapper ---
 
 export class ApiError extends Error {
@@ -132,4 +148,16 @@ export const api = {
   // Abgrenzung
   abgrenzung: (geschaeftsjahrId: string, methode: Abgrenzungsmethode) =>
     request<AbgrenzungsErgebnis>(`/abgrenzung/${geschaeftsjahrId}?methode=${methode}`),
+
+  // HAPAK — liefert das Diagnose-Ergebnis auch bei Fehlern (HTTP 502).
+  hapakTest: async (): Promise<HapakTestErgebnis> => {
+    const res = await fetch('/api/import/hapak/test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const text = await res.text();
+    const daten = text ? JSON.parse(text) : null;
+    if (daten && Array.isArray(daten.schritte)) return daten as HapakTestErgebnis;
+    throw new ApiError(res.status, daten?.fehler ?? res.statusText);
+  },
 };

@@ -21,6 +21,11 @@ services:
       - DATABASE_URL=file:/data/jahresabgrenzung.db
       - PORT=3000
       - NODE_ENV=production
+      # --- HAPAK / Synology-NAS (read-only). Passwort erst auf dem Server setzen. ---
+      - HAPAK_NAS_ID=megathron2024
+      - HAPAK_NAS_USER=replit-invoice
+      - HAPAK_NAS_PASS=HIER-DAS-NAS-PASSWORT
+      - HAPAK_BASIS_PFAD=/HapakV22/FB ZuB
     volumes:
       - app_data:/data
     labels:
