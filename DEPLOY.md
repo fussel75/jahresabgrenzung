@@ -12,7 +12,7 @@ HTTPS. Zugriff für Geschäftsführer + Steuerberater per Benutzername/Passwort
 ## 0. Voraussetzungen
 
 - Linux-VPS (Ubuntu/Debian empfohlen) mit root- oder sudo-Zugang.
-- Eine (Sub-)Domain, z.B. `abgrenzung.fristd-bau.de`.
+- Eine (Sub-)Domain, z.B. `jahresabgrenzung.fristd-bau.com`.
 - Offene Ports **80** und **443**.
 
 Betriebssystem prüfen (falls unbekannt):
@@ -42,13 +42,13 @@ docker --version && docker compose version
 Beim Domain-Anbieter einen **A-Record** anlegen:
 
 ```
-abgrenzung   A   <öffentliche-IP-des-VPS>
+jahresabgrenzung   A   <öffentliche-IP-des-VPS>
 ```
 
 Prüfen (sollte die VPS-IP zeigen):
 
 ```bash
-dig +short abgrenzung.fristd-bau.de
+dig +short jahresabgrenzung.fristd-bau.com
 ```
 
 > Caddy holt das HTTPS-Zertifikat erst, wenn die Domain auf den Server zeigt.
@@ -85,7 +85,7 @@ nano .env
 
 Setzen:
 
-- `APP_DOMAIN` = eure Domain (z.B. `abgrenzung.fristd-bau.de`)
+- `APP_DOMAIN` = eure Domain (z.B. `jahresabgrenzung.fristd-bau.com`)
 - `AUTH_USER` = gewünschter Benutzername
 - `AUTH_PASSWORD` = **starkes** Passwort
 
@@ -115,11 +115,11 @@ docker compose logs -f caddy   # zeigt die Zertifikatsausstellung
 ## 7. Funktion prüfen
 
 ```bash
-curl -s https://abgrenzung.fristd-bau.de/api/health
+curl -s https://jahresabgrenzung.fristd-bau.com/api/health
 # -> {"status":"ok"}
 ```
 
-Dann im Browser `https://abgrenzung.fristd-bau.de` öffnen → Login mit
+Dann im Browser `https://jahresabgrenzung.fristd-bau.com` öffnen → Login mit
 `AUTH_USER` / `AUTH_PASSWORD`.
 
 ---
