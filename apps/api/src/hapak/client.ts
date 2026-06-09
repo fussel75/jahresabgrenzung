@@ -6,12 +6,16 @@ import { join } from 'node:path';
  * Synology FileStation-Client (read-only) für den HAPAK-Zugriff über
  * QuickConnect. Es wird nur gelesen — niemals auf das NAS geschrieben.
  *
- * Konfiguration über Umgebungsvariablen (auf dem Server, nicht im Code):
- *   HAPAK_NAS_ID        QuickConnect-ID, z.B. "megathron2024"
- *   HAPAK_NAS_URL       (optional) direkte Basis-URL statt QuickConnect-ID
- *   HAPAK_NAS_USER      NAS-Benutzer (read-only-User empfohlen)
- *   HAPAK_NAS_PASS      NAS-Passwort  (Secret!)
- *   HAPAK_BASIS_PFAD    Default "/HapakV22/FB ZuB"
+ * Konfiguration über Umgebungsvariablen (auf dem Server, nicht im Code).
+ * Es werden mehrere Schreibweisen akzeptiert (je nachdem, was gesetzt ist):
+ *   Host/ID:   NAS_HOST | HAPAK_NAS_URL | HAPAK_NAS_ID | NAS_URL | NAS_QUICKCONNECT_ID
+ *   Benutzer:  NAS_USER | HAPAK_NAS_USER
+ *   Passwort:  NAS_PASS | HAPAK_NAS_PASS   (Secret!)
+ *   Basispfad: HAPAK_BASIS_PFAD | NAS_BASIS_PFAD   (Default "/HapakV22/FB ZuB")
+ *
+ * Der Host-Wert darf eine reine QuickConnect-ID ("megathron2024"), eine
+ * QuickConnect-URL ("http://quickconnect.to/megathron2024"), ein Relay-Host
+ * ("megathron2024.quickconnect.to") oder eine vollständige Basis-URL sein.
  */
 
 export interface HapakConfig {
@@ -21,22 +25,44 @@ export interface HapakConfig {
   basisPfad: string;
 }
 
+const ersterWert = (...namen: string[]): string =>
+  namen.map((n) => process.env[n]?.trim()).find((v) => v) ?? '';
+
+/** Normalisiert ID/URL/Host zu einer nutzbaren FileStation-Basis-URL. */
+export function normalisiereBaseUrl(roh: string): string {
+  const s = roh.trim().replace(/\/+$/, '');
+  // QuickConnect-Redirect-Form: (http(s)://)quickconnect.to/<id>
+  const qc = s.match(/quickconnect\.to\/([A-Za-z0-9_-]+)/i);
+  if (qc) return `https://${qc[1]}.quickconnect.to`;
+  // Bereits eine vollständige URL?
+  if (/^https?:\/\//i.test(s)) return s;
+  // Host mit Punkt (z.B. xxx.quickconnect.to oder DDNS) -> https davor
+  if (s.includes('.')) return `https://${s}`;
+  // Sonst: reine QuickConnect-ID
+  return `https://${s}.quickconnect.to`;
+}
+
 export function hapakConfigAusEnv(): { config?: HapakConfig; fehlend: string[] } {
-  const id = process.env.HAPAK_NAS_ID?.trim();
-  const urlOverride = process.env.HAPAK_NAS_URL?.trim();
-  const user = process.env.HAPAK_NAS_USER?.trim() ?? '';
-  const pass = process.env.HAPAK_NAS_PASS ?? '';
-  const basisPfad = process.env.HAPAK_BASIS_PFAD?.trim() || '/HapakV22/FB ZuB';
-  const baseUrl = urlOverride || (id ? `https://${id}.quickconnect.to` : '');
+  const hostRoh = ersterWert(
+    'NAS_HOST',
+    'HAPAK_NAS_URL',
+    'HAPAK_NAS_ID',
+    'NAS_URL',
+    'NAS_QUICKCONNECT_ID',
+  );
+  const user = ersterWert('NAS_USER', 'HAPAK_NAS_USER');
+  const pass = process.env.NAS_PASS ?? process.env.HAPAK_NAS_PASS ?? '';
+  const basisPfad =
+    ersterWert('HAPAK_BASIS_PFAD', 'NAS_BASIS_PFAD') || '/HapakV22/FB ZuB';
 
   const fehlend: string[] = [];
-  if (!baseUrl) fehlend.push('HAPAK_NAS_ID (oder HAPAK_NAS_URL)');
-  if (!user) fehlend.push('HAPAK_NAS_USER');
-  if (!pass) fehlend.push('HAPAK_NAS_PASS');
+  if (!hostRoh) fehlend.push('NAS_HOST');
+  if (!user) fehlend.push('NAS_USER');
+  if (!pass) fehlend.push('NAS_PASS');
   if (fehlend.length) return { fehlend };
 
   return {
-    config: { baseUrl: baseUrl.replace(/\/+$/, ''), user, pass, basisPfad },
+    config: { baseUrl: normalisiereBaseUrl(hostRoh), user, pass, basisPfad },
     fehlend: [],
   };
 }
