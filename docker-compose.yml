@@ -1,5 +1,12 @@
-# Produktions-Setup: App (Node + SQLite) hinter Caddy (automatisches HTTPS).
-# Werte kommen aus der .env-Datei (siehe .env.production.example).
+# Produktions-Setup für Hostinger Docker Manager mit Traefik.
+#
+# Voraussetzung: In Hostinger einmal "Traefik bereitstellen" geklickt
+# (legt das externe Netzwerk "traefik-proxy" + den letsencrypt-Resolver an).
+# Traefik übernimmt HTTPS automatisch; dieser Container veröffentlicht
+# KEINE eigenen Ports und bringt KEINEN eigenen Proxy mit.
+#
+# Werte kommen aus der .env (siehe .env.production.example):
+#   APP_DOMAIN, AUTH_USER, AUTH_PASSWORD
 
 services:
   app:
@@ -9,31 +16,28 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      # SQLite-Datei liegt im persistenten Volume (absoluter Pfad = eindeutig).
+      # SQLite-Datei im persistenten Volume (absoluter Pfad = eindeutig).
       - DATABASE_URL=file:/data/jahresabgrenzung.db
       - PORT=3000
       - NODE_ENV=production
     volumes:
       - app_data:/data
-    expose:
-      - "3000"
+    networks:
+      - traefik-proxy
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-proxy
+      # Routing der Domain auf diesen Container (Domain steht in der .env):
+      - traefik.http.routers.jahresabgrenzung.rule=Host(`${APP_DOMAIN}`)
+      - traefik.http.routers.jahresabgrenzung.entrypoints=websecure
+      - traefik.http.routers.jahresabgrenzung.tls.certresolver=letsencrypt
+      # Interner Port der App (Traefik leitet 443 -> 3000):
+      - traefik.http.services.jahresabgrenzung.loadbalancer.server.port=3000
 
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    depends_on:
-      - app
-    ports:
-      - "80:80"
-      - "443:443"
-    environment:
-      - APP_DOMAIN=${APP_DOMAIN}
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
+networks:
+  # Wird von Hostinger beim Bereitstellen von Traefik angelegt.
+  traefik-proxy:
+    external: true
 
 volumes:
   app_data: # SQLite-Datenbank (Backup: siehe DEPLOY.md)
-  caddy_data: # Caddy-Zertifikate
-  caddy_config:

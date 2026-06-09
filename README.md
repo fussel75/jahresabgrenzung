@@ -58,14 +58,21 @@ an die API.
 
 ## Deployment (VPS / Produktion)
 
-> **Empfohlen: Docker + Caddy (automatisches HTTPS).** Die vollständige,
-> schrittweise Anleitung steht in **[DEPLOY.md](DEPLOY.md)** — inkl. DNS,
-> Backup, Updates und Fehlerbehebung. Kurzfassung:
+> **Empfohlen: Docker hinter Traefik (automatisches HTTPS).** Das Setup ist auf
+> den **Hostinger Docker Manager** mit Traefik zugeschnitten (externes Netzwerk
+> `traefik-proxy`, Resolver `letsencrypt`). Die vollständige, schrittweise
+> Anleitung steht in **[DEPLOY.md](DEPLOY.md)** — inkl. DNS, Backup, Updates und
+> Fehlerbehebung. Kurzfassung:
 >
 > ```bash
-> cp .env.production.example .env   # APP_DOMAIN, AUTH_USER, AUTH_PASSWORD setzen
+> # einmalig: in Hostinger "Traefik bereitstellen"
+> cp .env.production.example .env   # AUTH_PASSWORD setzen (Domain/User vorbelegt)
 > docker compose up -d --build
 > ```
+>
+> Für einen eigenen Reverse-Proxy (z.B. Caddy/nginx) statt Traefik müssten die
+> Traefik-Labels in `docker-compose.yml` durch eine Port-Veröffentlichung und
+> einen eigenen Proxy ersetzt werden.
 
 Alternativ **nativ** ohne Docker: Das Backend liefert in Produktion das gebaute
 Frontend mit aus — es läuft also **ein** Node-Prozess.
