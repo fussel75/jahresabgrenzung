@@ -94,9 +94,10 @@ export function Abgrenzungsbericht() {
           <p className="text-sm text-gray-500">Methode: {METHODE_LABEL[methode]} · {abzugrenzende.length} abzugrenzende Projekte</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <a href={`/api/abgrenzung/${gewaehltesGjId}/export.xlsx?methode=${methode}`} className="rounded-lg bg-anthrazit px-3 py-2 text-sm font-semibold text-white hover:bg-dunkelblau">Excel</a>
+          <a href={`/api/abgrenzung/${gewaehltesGjId}/export.pdf?methode=${methode}`} className="rounded-lg bg-anthrazit px-3 py-2 text-sm font-semibold text-white hover:bg-dunkelblau">PDF</a>
           <button onClick={berichtCsv} className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium hover:bg-gray-50">Bericht CSV</button>
           <button onClick={buchungssatzCsv} className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium hover:bg-gray-50">Buchungssatz CSV</button>
-          <span className="self-center text-xs text-gray-400">Excel/PDF folgen in Schritt 8</span>
         </div>
       </div>
 
