@@ -10,6 +10,26 @@ und veröffentlicht keine Ports.
 
 ---
 
+## ⭐ Einfachster Weg (ohne Terminal — alles über die Hostinger-Oberfläche)
+
+Hier wird ein **fertig gebautes Image** von GitHub gezogen (GitHub Actions baut
+es automatisch). Kein SSH, kein git, kein Editor.
+
+1. **Traefik bereitstellen**: im Docker Manager unten auf „Traefik bereitstellen".
+2. **Image öffentlich schalten** (einmalig): nach dem ersten erfolgreichen
+   GitHub-Actions-Lauf das Paket `jahresabgrenzung` unter
+   `https://github.com/fussel75?tab=packages` öffnen → *Package settings* →
+   *Change visibility* → **Public**. (Damit der Server es ohne Login ziehen kann.)
+3. **Projekt anlegen**: im Docker Manager auf **„Compose"** → neues Projekt →
+   den Inhalt von **`deploy/hostinger-compose.yml`** einfügen, bei
+   `AUTH_PASSWORD` ein starkes Passwort eintragen → **Deploy**.
+4. Nach 1–3 Minuten ist `https://jahresabgrenzung.fristd-bau.com` live.
+
+Der manuelle Terminal-Weg unten ist die Alternative, falls du lieber aus dem
+Quellcode baust.
+
+---
+
 ## 0. Voraussetzungen
 
 - Hostinger-VPS mit aktivem **Docker Manager**.

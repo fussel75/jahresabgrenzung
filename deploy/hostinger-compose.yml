@@ -1,0 +1,37 @@
+# ====================================================================
+# EINFACHSTER WEG — In Hostinger Docker Manager unter "Compose" einfügen.
+# Es wird das fertige Image von GitHub gezogen (nichts wird gebaut).
+#
+# Vorher 1x in Hostinger "Traefik bereitstellen" klicken.
+# NUR EINE ZEILE anpassen:  AUTH_PASSWORD
+# ====================================================================
+
+services:
+  app:
+    image: ghcr.io/fussel75/jahresabgrenzung:latest
+    restart: unless-stopped
+    environment:
+      - APP_DOMAIN=jahresabgrenzung.fristd-bau.com
+      - AUTH_USER=fristd-bau-abgrenzung
+      - AUTH_PASSWORD=HIER-EIN-STARKES-PASSWORT-EINTRAGEN
+      - DATABASE_URL=file:/data/jahresabgrenzung.db
+      - PORT=3000
+      - NODE_ENV=production
+    volumes:
+      - app_data:/data
+    networks:
+      - traefik-proxy
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-proxy
+      - traefik.http.routers.jahresabgrenzung.rule=Host(`jahresabgrenzung.fristd-bau.com`)
+      - traefik.http.routers.jahresabgrenzung.entrypoints=websecure
+      - traefik.http.routers.jahresabgrenzung.tls.certresolver=letsencrypt
+      - traefik.http.services.jahresabgrenzung.loadbalancer.server.port=3000
+
+networks:
+  traefik-proxy:
+    external: true
+
+volumes:
+  app_data:
