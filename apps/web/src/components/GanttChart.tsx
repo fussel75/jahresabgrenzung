@@ -1,5 +1,11 @@
-import { useMemo, useState } from 'react';
-import { addDays, differenceInCalendarDays, eachMonthOfInterval, format } from 'date-fns';
+import { useMemo, useRef, useState } from 'react';
+import {
+  addDays,
+  differenceInCalendarDays,
+  eachMonthOfInterval,
+  eachYearOfInterval,
+  format,
+} from 'date-fns';
 import { de } from 'date-fns/locale';
 import { euro, datum as fmtDatum, prozent } from '../format';
 
@@ -15,8 +21,8 @@ export interface GanttProjekt {
   abgrenzungsbedarf: boolean;
 }
 
-type Skala = 'tag' | 'woche' | 'monat';
-const PX_PRO_TAG: Record<Skala, number> = { tag: 16, woche: 6, monat: 2.2 };
+type Skala = 'tag' | 'woche' | 'monat' | 'jahr';
+const PX_PRO_TAG: Record<Skala, number> = { tag: 16, woche: 6, monat: 2.2, jahr: 0.6 };
 
 const LEFT_PAD = 8;
 const ROW_H = 30;
@@ -31,12 +37,19 @@ interface Props {
 }
 
 export function GanttChart({ projekte, stichtag, heute = new Date(), onProjektClick }: Props) {
-  const [skala, setSkala] = useState<Skala>('woche');
+  // Default-Skala: Jahr, wenn der Gesamtzeitraum > 18 Monate ist; sonst Woche.
+  const spannMonate = useMemo(() => {
+    if (projekte.length === 0) return 0;
+    const min = Math.min(...projekte.map((p) => p.start.getTime()));
+    const max = Math.max(...projekte.map((p) => p.ende.getTime()));
+    return (max - min) / (1000 * 60 * 60 * 24 * 30);
+  }, [projekte]);
+  const [skala, setSkala] = useState<Skala>(spannMonate > 18 ? 'jahr' : 'woche');
   const [tooltip, setTooltip] = useState<{ x: number; y: number; p: GanttProjekt } | null>(null);
 
   const pxProTag = PX_PRO_TAG[skala];
 
-  const { start, ende, breite, monate } = useMemo(() => {
+  const { start, ende, breite, monate, jahre } = useMemo(() => {
     const jahreswechsel = addDays(stichtag, 1);
     const starts = projekte.map((p) => p.start.getTime());
     const enden = projekte.map((p) => p.ende.getTime());
@@ -46,7 +59,8 @@ export function GanttChart({ projekte, stichtag, heute = new Date(), onProjektCl
     const e = addDays(maxEnde, 10);
     const tage = differenceInCalendarDays(e, s);
     const monate = eachMonthOfInterval({ start: s, end: e });
-    return { start: s, ende: e, breite: tage * pxProTag + LEFT_PAD * 2, monate };
+    const jahre = eachYearOfInterval({ start: s, end: e });
+    return { start: s, ende: e, breite: tage * pxProTag + LEFT_PAD * 2, monate, jahre };
   }, [projekte, stichtag, pxProTag]);
 
   const hoehe = projekte.length * ROW_H + AXIS_H + 8;
@@ -60,7 +74,7 @@ export function GanttChart({ projekte, stichtag, heute = new Date(), onProjektCl
     <div className="space-y-2">
       <div className="flex items-center gap-2 text-sm">
         <span className="text-gray-500">Zeitachse:</span>
-        {(['tag', 'woche', 'monat'] as Skala[]).map((s) => (
+        {(['tag', 'woche', 'monat', 'jahr'] as Skala[]).map((s) => (
           <button
             key={s}
             onClick={() => setSkala(s)}
@@ -78,20 +92,33 @@ export function GanttChart({ projekte, stichtag, heute = new Date(), onProjektCl
         </span>
       </div>
 
-      <div className="relative overflow-x-auto rounded-lg border border-gray-200 bg-white">
+      <ScrollSync breite={Math.max(breite, 320)}>
         <svg width={Math.max(breite, 320)} height={hoehe} className="block">
-          {/* Monatsraster + Beschriftung */}
-          {monate.map((m, i) => {
-            const x = xFor(m);
-            return (
-              <g key={i}>
-                <line x1={x} y1={AXIS_H} x2={x} y2={hoehe} stroke="#f1f5f9" strokeWidth={1} />
-                <text x={x + 3} y={16} fontSize={11} fill="#94a3b8">
-                  {format(m, 'MMM yy', { locale: de })}
-                </text>
-              </g>
-            );
-          })}
+          {/* Achsen-Beschriftung: Monate (bei feiner Skala) oder Jahre (bei Jahres-Skala) */}
+          {skala !== 'jahr' &&
+            monate.map((m, i) => {
+              const x = xFor(m);
+              return (
+                <g key={`m${i}`}>
+                  <line x1={x} y1={AXIS_H} x2={x} y2={hoehe} stroke="#f1f5f9" strokeWidth={1} />
+                  <text x={x + 3} y={16} fontSize={11} fill="#94a3b8">
+                    {format(m, 'MMM yy', { locale: de })}
+                  </text>
+                </g>
+              );
+            })}
+          {skala === 'jahr' &&
+            jahre.map((j, i) => {
+              const x = xFor(j);
+              return (
+                <g key={`y${i}`}>
+                  <line x1={x} y1={AXIS_H} x2={x} y2={hoehe} stroke="#e2e8f0" strokeWidth={1} />
+                  <text x={x + 4} y={16} fontSize={12} fontWeight={600} fill="#475569">
+                    {format(j, 'yyyy', { locale: de })}
+                  </text>
+                </g>
+              );
+            })}
 
           {/* Jahreswechsel-Linie (rot) */}
           <line
@@ -170,6 +197,33 @@ export function GanttChart({ projekte, stichtag, heute = new Date(), onProjektCl
             )}
           </div>
         )}
+      </ScrollSync>
+    </div>
+  );
+}
+
+/**
+ * Wrapper, der zwei horizontale Scrollleisten (oben + unten) synchron hält.
+ * Spart das Scrollen ans untere Ende — gerade bei langen Projektlisten wichtig.
+ */
+function ScrollSync({ children, breite }: { children: React.ReactNode; breite: number }) {
+  const oben = useRef<HTMLDivElement>(null);
+  const unten = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<{ p?: GanttProjekt | null } | null>(null);
+  void tooltipRef;
+
+  const sync = (a: React.RefObject<HTMLDivElement>, b: React.RefObject<HTMLDivElement>) => () => {
+    if (a.current && b.current) b.current.scrollLeft = a.current.scrollLeft;
+  };
+
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white">
+      {/* obere Scrollleiste — spiegelt die untere */}
+      <div ref={oben} onScroll={sync(oben, unten)} className="overflow-x-auto">
+        <div style={{ width: breite, height: 1 }} />
+      </div>
+      <div ref={unten} onScroll={sync(unten, oben)} className="relative overflow-x-auto">
+        {children}
       </div>
     </div>
   );
