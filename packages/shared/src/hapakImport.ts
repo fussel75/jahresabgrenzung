@@ -64,6 +64,14 @@ export interface ImportZahlung {
   beschreibung: string;
 }
 
+export interface ImportKostenposition {
+  datum: Date | null;
+  betragNetto: number;
+  rechnungsNr: string;
+  lieferant: string; // ADR_SUCH der Eingangsrechnung
+  beschreibung: string;
+}
+
 export interface ImportProjekt {
   projektnummer: string; // Anzeige-Nummer JJ-NNNNN (wie in HAPAK sichtbar)
   projname: string; // interner HAPAK-Schlüssel (PROJNAME), z.B. PZZ25000003
@@ -78,6 +86,7 @@ export interface ImportProjekt {
   laeuft: boolean;
   sammelprojekt: boolean; // "Kleinprojekte"-Bündel -> Sonderbehandlung
   zahlungen: ImportZahlung[];
+  kostenpositionen: ImportKostenposition[];
   anzahlEingangsrechnungen: number;
   anzahlAusgangsrechnungen: number;
 }
@@ -200,6 +209,17 @@ export function mappeHapakImport(
       eingang.filter((f) => bisStichtag(f.belegdat)).reduce((s, f) => s + f.netto, 0),
     );
 
+    // Eingangsrechnungen als einzelne Kostenpositionen aufbereiten.
+    const kostenpositionen: ImportKostenposition[] = eingang
+      .filter((f) => bisStichtag(f.belegdat))
+      .map((f) => ({
+        datum: f.belegdat,
+        betragNetto: round2(f.netto),
+        rechnungsNr: f.rnr.trim(),
+        lieferant: f.adrSuch.trim(),
+        beschreibung: f.betreff.trim(),
+      }));
+
     const zahlungen: ImportZahlung[] = [];
     for (const f of ausgang.filter((x) => bisStichtag(x.belegdat))) {
       const dok = dokByName.get(f.rnr.trim());
@@ -263,6 +283,7 @@ export function mappeHapakImport(
       enddatum,
       laeuft: enddatum === null,
       zahlungen,
+      kostenpositionen,
       anzahlEingangsrechnungen: eingang.length,
       anzahlAusgangsrechnungen: ausgang.length,
     });

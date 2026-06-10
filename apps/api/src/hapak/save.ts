@@ -96,8 +96,9 @@ export async function speichereImport(
             istKostenStichtag: daten.istKostenStichtag,
           },
         });
-        // Zahlungen aus früherem HAPAK-Sync wegräumen und neu schreiben.
+        // HAPAK-Sync: Zahlungen + Kostenpositionen wegräumen und neu schreiben.
         await prisma.zahlung.deleteMany({ where: { projektId: vorhanden.id } });
+        await prisma.kostenposition.deleteMany({ where: { projektId: vorhanden.id } });
         projektId = vorhanden.id;
         aktualisiert++;
         details.push({ projname: p.projname, projektnummer: p.projektnummer, aktion: 'aktualisiert' });
@@ -119,6 +120,21 @@ export async function speichereImport(
             art: z.art,
             rechnungsNr: z.rechnungsNr || null,
             beschreibung: z.beschreibung || null,
+          },
+        });
+      }
+
+      // Kostenpositionen schreiben (Eingangsrechnungen aus FIBUZWO).
+      for (const k of p.kostenpositionen) {
+        if (!k.datum) continue;
+        const text = [k.lieferant, k.beschreibung].filter(Boolean).join(' — ');
+        await prisma.kostenposition.create({
+          data: {
+            projektId,
+            datum: k.datum,
+            betragNetto: k.betragNetto,
+            art: 'FREMDLEISTUNG',
+            beschreibung: text ? `${text}${k.rechnungsNr ? ` (Rg. ${k.rechnungsNr})` : ''}` : k.rechnungsNr || null,
           },
         });
       }
