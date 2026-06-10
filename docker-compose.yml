@@ -35,6 +35,8 @@ services:
       - traefik.http.routers.jahresabgrenzung.tls.certresolver=letsencrypt
       # Interner Port der App (Traefik leitet 443 -> 3000):
       - traefik.http.services.jahresabgrenzung.loadbalancer.server.port=3000
+      # Auto-Update via Watchtower (aktualisiert NUR diesen Container):
+      - com.centurylinklabs.watchtower.enable=true
 
 volumes:
   app_data: # SQLite-Datenbank (Backup: siehe DEPLOY.md)

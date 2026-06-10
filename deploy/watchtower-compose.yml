@@ -1,0 +1,22 @@
+# ====================================================================
+# Auto-Update der Jahresabgrenzung-App via Watchtower.
+#
+# In Hostinger Docker Manager -> Compose -> "Manuell erstellen" als eigenes
+# Projekt (z.B. Name "watchtower") einfügen und bereitstellen.
+#
+# Watchtower prüft regelmäßig die Registry und aktualisiert AUSSCHLIESSLICH
+# Container mit dem Label  com.centurylinklabs.watchtower.enable=true
+# (also nur die jahresabgrenzung-App). Alle anderen Projekte bleiben
+# unberührt. Env/Volumes/Labels des App-Containers werden dabei übernommen.
+# ====================================================================
+
+services:
+  watchtower:
+    image: containrrr/watchtower:latest
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    # --label-enable: nur explizit markierte Container aktualisieren
+    # --cleanup:      altes Image nach Update entfernen
+    # --interval 300: alle 5 Minuten prüfen
+    command: --label-enable --cleanup --interval 300
