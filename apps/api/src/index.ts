@@ -18,7 +18,15 @@ const port = Number(process.env.PORT ?? 3000);
 app.use(express.json({ limit: '5mb' }));
 
 // Health-Check bewusst OHNE Auth (für VPS-/Uptime-Monitoring).
-app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
+app.get('/api/health', (_req, res) => {
+  const jetzt = new Date();
+  res.json({
+    status: 'ok',
+    zeitzone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    serverzeit: jetzt.toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }),
+    iso: jetzt.toISOString(),
+  });
+});
 
 // Basic Auth schützt ab hier API + ausgeliefertes Frontend (V1, SPEC.md §2).
 app.use(basicAuth);

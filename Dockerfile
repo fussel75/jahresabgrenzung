@@ -34,10 +34,16 @@ RUN npx prisma generate \
 FROM node:20-bookworm-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
+# Hamburg/Deutschland: Mitteleuropäische Zeit inkl. Sommer-/Winterzeit.
+# Wichtig, weil Stichtage (31.12. 23:59) und der "Heute"-Marker sonst
+# in UTC laufen und an Tagesgrenzen falsch landen.
+ENV TZ=Europe/Berlin
 
-# OpenSSL wird von der Prisma-Engine benötigt.
+# OpenSSL (Prisma) und tzdata (Zeitzonen-Daten) installieren.
 RUN apt-get update \
- && apt-get install -y --no-install-recommends openssl ca-certificates \
+ && apt-get install -y --no-install-recommends openssl ca-certificates tzdata \
+ && ln -snf /usr/share/zoneinfo/Europe/Berlin /etc/localtime \
+ && echo "Europe/Berlin" > /etc/timezone \
  && rm -rf /var/lib/apt/lists/*
 
 # Komplettes, bereits gebautes App-Verzeichnis übernehmen (inkl. node_modules,

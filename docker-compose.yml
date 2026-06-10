@@ -20,6 +20,7 @@ services:
       - DATABASE_URL=file:/data/jahresabgrenzung.db
       - PORT=3000
       - NODE_ENV=production
+      - TZ=Europe/Berlin
       # HAPAK / Synology-NAS (read-only) — Werte in der .env setzen:
       - HAPAK_NAS_ID=${HAPAK_NAS_ID:-}
       - HAPAK_NAS_USER=${HAPAK_NAS_USER:-}

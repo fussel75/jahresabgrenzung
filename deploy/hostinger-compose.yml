@@ -21,6 +21,8 @@ services:
       - DATABASE_URL=file:/data/jahresabgrenzung.db
       - PORT=3000
       - NODE_ENV=production
+      # Zeitzone (kann hier überschrieben werden, Default im Image ist Europe/Berlin):
+      - TZ=Europe/Berlin
       # --- HAPAK / Synology-NAS (read-only). Passwort auf dem Server setzen. ---
       # HAPAK_NAS_ID darf ID, QuickConnect-URL oder Host sein.
       - HAPAK_NAS_ID=megathron2024
