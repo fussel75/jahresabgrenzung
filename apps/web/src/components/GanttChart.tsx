@@ -26,7 +26,7 @@ const PX_PRO_TAG: Record<Skala, number> = { tag: 16, woche: 6, monat: 2.2, jahr:
 
 const LEFT_PAD = 8;
 const ROW_H = 30;
-const AXIS_H = 26;
+const AXIS_H = 40; // mehr Platz für Jahreszahlen + Jahreswechsel-Label übereinander
 
 interface Props {
   projekte: GanttProjekt[];
@@ -101,7 +101,7 @@ export function GanttChart({ projekte, stichtag, heute = new Date(), onProjektCl
               return (
                 <g key={`m${i}`}>
                   <line x1={x} y1={AXIS_H} x2={x} y2={hoehe} stroke="#f1f5f9" strokeWidth={1} />
-                  <text x={x + 3} y={16} fontSize={11} fill="#94a3b8">
+                  <text x={x + 3} y={AXIS_H - 8} fontSize={11} fill="#94a3b8">
                     {format(m, 'MMM yy', { locale: de })}
                   </text>
                 </g>
@@ -113,7 +113,7 @@ export function GanttChart({ projekte, stichtag, heute = new Date(), onProjektCl
               return (
                 <g key={`y${i}`}>
                   <line x1={x} y1={AXIS_H} x2={x} y2={hoehe} stroke="#e2e8f0" strokeWidth={1} />
-                  <text x={x + 4} y={16} fontSize={12} fontWeight={600} fill="#475569">
+                  <text x={x + 4} y={AXIS_H - 6} fontSize={12} fontWeight={600} fill="#475569">
                     {format(j, 'yyyy', { locale: de })}
                   </text>
                 </g>
@@ -129,15 +129,8 @@ export function GanttChart({ projekte, stichtag, heute = new Date(), onProjektCl
             stroke="#dc2626"
             strokeWidth={2}
           />
-          <rect
-            x={jahreswechselX + 3}
-            y={AXIS_H - 18}
-            width={84}
-            height={14}
-            rx={2}
-            fill="#dc2626"
-          />
-          <text x={jahreswechselX + 6} y={AXIS_H - 7} fontSize={11} fontWeight={700} fill="#fff">
+          <rect x={jahreswechselX + 3} y={2} width={84} height={14} rx={2} fill="#dc2626" />
+          <text x={jahreswechselX + 6} y={13} fontSize={11} fontWeight={700} fill="#fff">
             Jahreswechsel
           </text>
 
@@ -166,9 +159,7 @@ export function GanttChart({ projekte, stichtag, heute = new Date(), onProjektCl
               <g
                 key={p.id}
                 className="cursor-pointer"
-                onMouseEnter={(e) =>
-                  setTooltip({ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY, p })
-                }
+                onMouseMove={(e) => setTooltip({ x: e.clientX, y: e.clientY, p })}
                 onMouseLeave={() => setTooltip(null)}
                 onClick={() => onProjektClick?.(p.id)}
               >
@@ -185,27 +176,31 @@ export function GanttChart({ projekte, stichtag, heute = new Date(), onProjektCl
             );
           })}
         </svg>
-
-        {tooltip && (
-          <div
-            className="pointer-events-none absolute z-10 max-w-xs rounded-lg bg-anthrazit px-3 py-2 text-xs text-white shadow-lg"
-            style={{ left: tooltip.x + 12, top: tooltip.y + 12 }}
-          >
-            <div className="font-bold">{tooltip.p.label}</div>
-            <div className="text-gray-300">{tooltip.p.kunde}</div>
-            <div className="mt-1">
-              {fmtDatum(tooltip.p.start)} – {fmtDatum(tooltip.p.ende)}
-            </div>
-            <div>Volumen: {euro(tooltip.p.volumen)}</div>
-            {tooltip.p.abgrenzungsbedarf && (
-              <>
-                <div>Anteil Stichjahr: {prozent(tooltip.p.anteilStichjahrProzent)}</div>
-                <div>Abgrenzung: {euro(tooltip.p.abgrenzungsbetrag)}</div>
-              </>
-            )}
-          </div>
-        )}
       </ScrollSync>
+
+      {tooltip && (
+        <div
+          className="pointer-events-none fixed z-50 max-w-xs rounded-lg bg-anthrazit px-3 py-2 text-xs text-white shadow-lg"
+          style={{
+            // Tooltip rechts unterhalb des Mauszeigers; bei Rand-Nähe nach links/oben klappen.
+            left: Math.min(tooltip.x + 14, window.innerWidth - 280),
+            top: Math.min(tooltip.y + 14, window.innerHeight - 120),
+          }}
+        >
+          <div className="font-bold">{tooltip.p.label}</div>
+          <div className="text-gray-300">{tooltip.p.kunde}</div>
+          <div className="mt-1">
+            {fmtDatum(tooltip.p.start)} – {fmtDatum(tooltip.p.ende)}
+          </div>
+          <div>Volumen: {euro(tooltip.p.volumen)}</div>
+          {tooltip.p.abgrenzungsbedarf && (
+            <>
+              <div>Anteil Stichjahr: {prozent(tooltip.p.anteilStichjahrProzent)}</div>
+              <div>Abgrenzung: {euro(tooltip.p.abgrenzungsbetrag)}</div>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -217,9 +212,6 @@ export function GanttChart({ projekte, stichtag, heute = new Date(), onProjektCl
 function ScrollSync({ children, breite }: { children: React.ReactNode; breite: number }) {
   const oben = useRef<HTMLDivElement>(null);
   const unten = useRef<HTMLDivElement>(null);
-  const tooltipRef = useRef<{ p?: GanttProjekt | null } | null>(null);
-  void tooltipRef;
-
   const sync = (a: React.RefObject<HTMLDivElement>, b: React.RefObject<HTMLDivElement>) => () => {
     if (a.current && b.current) b.current.scrollLeft = a.current.scrollLeft;
   };
