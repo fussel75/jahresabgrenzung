@@ -163,27 +163,19 @@ docker compose start app
 
 ## 8. Updates einspielen
 
-**Manuell** (image-Variante): neues Image ziehen, dann neu bereitstellen:
+Manuelles Update (bewusst kein Auto-Updater). Zwei Wege:
+
+**A — Ein Befehl (empfohlen).** Im Hostinger-Terminal:
 
 ```bash
-docker pull ghcr.io/fussel75/jahresabgrenzung:latest
-# danach im Docker Manager "Bereitstellen"
+curl -fsSL https://raw.githubusercontent.com/fussel75/jahresabgrenzung/main/deploy/update.sh | sh
 ```
 
-**Automatisch (empfohlen): Watchtower.** Einmalig einrichten, danach zieht der
-VPS neue Versionen selbst:
+Das Skript zieht das neue Image und erzeugt den App-Container neu (Env/Volumes
+bleiben erhalten). Migrationen laufen beim Start automatisch.
 
-1. Am App-Container das Label setzen (ist in `deploy/hostinger-compose.yml`
-   schon enthalten):
-   `com.centurylinklabs.watchtower.enable=true`
-2. Den Inhalt von `deploy/watchtower-compose.yml` als **eigenes** Compose-Projekt
-   (z.B. „watchtower") bereitstellen.
-
-Watchtower aktualisiert dann **nur** Container mit diesem Label (also nur die
-App) im 5-Minuten-Takt — Env/Volumes bleiben erhalten, andere Projekte werden
-nicht angefasst. Intervall in `command: --interval <Sekunden>` anpassbar.
-
-Migrationen laufen beim Start automatisch; die Daten im Volume bleiben erhalten.
+**B — Im Docker Manager klicken.** Im Terminal `docker pull ghcr.io/fussel75/jahresabgrenzung:latest`,
+danach beim Projekt `jahresabgrenzung` auf „Bereitstellen".
 
 ---
 

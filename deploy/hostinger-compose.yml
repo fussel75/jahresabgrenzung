@@ -35,8 +35,6 @@ services:
       - traefik.http.routers.jahresabgrenzung.entrypoints=websecure
       - traefik.http.routers.jahresabgrenzung.tls.certresolver=letsencrypt
       - traefik.http.services.jahresabgrenzung.loadbalancer.server.port=3000
-      # Auto-Update via Watchtower (aktualisiert NUR diesen Container):
-      - com.centurylinklabs.watchtower.enable=true
 
 volumes:
   app_data:
