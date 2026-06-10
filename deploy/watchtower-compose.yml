@@ -12,7 +12,10 @@
 
 services:
   watchtower:
-    image: containrrr/watchtower:latest
+    # Aktiv gepflegter Fork — kompatibel mit aktueller Docker-Engine-API.
+    # (Der Originalcontainer containrrr/watchtower wird nicht mehr gepflegt
+    # und nutzt eine veraltete API 1.25, die moderne Docker-Daemons ablehnen.)
+    image: nickfedor/watchtower:latest
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
