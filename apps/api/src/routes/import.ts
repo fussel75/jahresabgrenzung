@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { asyncHandler } from '../helpers.js';
 import { hapakVerbindungstest } from '../hapak/preview.js';
+import { hapakImportVorschau } from '../hapak/import.js';
 
 /**
  * Import-Schnittstelle.
@@ -21,9 +22,13 @@ importRouter.post(
   }),
 );
 
-importRouter.post('/hapak', (_req, res) => {
-  res.status(501).json({
-    fehler: 'HAPAK-Import noch nicht aktiv',
-    hinweis: 'Zuerst Verbindungstest über POST /api/import/hapak/test ausführen.',
-  });
-});
+// Read-only Projekt-Vorschau (lädt + mappt, speichert nichts).
+importRouter.post(
+  '/hapak/vorschau',
+  asyncHandler(async (req, res) => {
+    const abJahr = Number(req.body?.abJahr) || 2024;
+    const stichtag = req.body?.stichtag ? new Date(String(req.body.stichtag)) : null;
+    const ergebnis = await hapakImportVorschau(abJahr, stichtag);
+    res.status(ergebnis.ok ? 200 : 502).json(ergebnis);
+  }),
+);

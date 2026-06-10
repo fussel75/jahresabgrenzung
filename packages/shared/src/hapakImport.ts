@@ -75,6 +75,7 @@ export interface ImportProjekt {
   startdatum: Date | null;
   enddatum: Date | null; // Schlussrechnung; null => läuft
   laeuft: boolean;
+  sammelprojekt: boolean; // "Kleinprojekte"-Bündel -> Sonderbehandlung
   zahlungen: ImportZahlung[];
   anzahlEingangsrechnungen: number;
   anzahlAusgangsrechnungen: number;
@@ -243,9 +244,11 @@ export function mappeHapakImport(
       summeAusgang,
     );
 
+    const bezeichnung = (kopf?.betreff || fbs[0]?.betreff || proj).trim();
     ergebnis.push({
       projektnummer: proj,
-      bezeichnung: (kopf?.betreff || fbs[0]?.betreff || proj).trim(),
+      bezeichnung,
+      sammelprojekt: /kleinprojekt/i.test(bezeichnung),
       kunde: kundeName || '(unbekannt)',
       kundenadresse,
       auftragssummeNetto,

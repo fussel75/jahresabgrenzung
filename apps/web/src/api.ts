@@ -83,6 +83,31 @@ export interface HapakTestErgebnis {
   };
 }
 
+export interface ImportProjekt {
+  projektnummer: string;
+  bezeichnung: string;
+  kunde: string;
+  kundenadresse?: string;
+  auftragssummeNetto: number;
+  auftragssummeQuelle: string;
+  istKostenStichtag: number;
+  startdatum: string | null;
+  enddatum: string | null;
+  laeuft: boolean;
+  sammelprojekt: boolean;
+  anzahlEingangsrechnungen: number;
+  anzahlAusgangsrechnungen: number;
+  zahlungen: unknown[];
+}
+
+export interface HapakVorschauErgebnis {
+  ok: boolean;
+  fehler?: string;
+  abJahr: number;
+  stichtag: string | null;
+  projekte: ImportProjekt[];
+}
+
 // --- Fetch-Wrapper ---
 
 export class ApiError extends Error {
@@ -158,6 +183,18 @@ export const api = {
     const text = await res.text();
     const daten = text ? JSON.parse(text) : null;
     if (daten && Array.isArray(daten.schritte)) return daten as HapakTestErgebnis;
+    throw new ApiError(res.status, daten?.fehler ?? res.statusText);
+  },
+
+  hapakVorschau: async (abJahr: number, stichtag: string | null): Promise<HapakVorschauErgebnis> => {
+    const res = await fetch('/api/import/hapak/vorschau', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ abJahr, stichtag }),
+    });
+    const text = await res.text();
+    const daten = text ? JSON.parse(text) : null;
+    if (daten && Array.isArray(daten.projekte)) return daten as HapakVorschauErgebnis;
     throw new ApiError(res.status, daten?.fehler ?? res.statusText);
   },
 };

@@ -14,3 +14,9 @@ export async function dbfVorschau(localPfad: string, limit = 10): Promise<DbfVor
   const zeilen = (await dbf.readRecords(limit)) as Record<string, unknown>[];
   return { felder, anzahlGesamt: dbf.recordCount, zeilen };
 }
+
+/** Liest alle Datensätze einer DBF (CP1252). */
+export async function dbfAlle(localPfad: string): Promise<Record<string, unknown>[]> {
+  const dbf = await DBFFile.open(localPfad, { encoding: 'cp1252', readMode: 'loose' });
+  return (await dbf.readRecords(dbf.recordCount)) as Record<string, unknown>[];
+}
