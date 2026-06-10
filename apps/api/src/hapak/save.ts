@@ -115,34 +115,39 @@ export async function speichereImport(
         details.push({ projname: p.projname, projektnummer: p.projektnummer, aktion: 'neu' });
       }
 
-      // Zahlungen schreiben (frisch).
-      for (const z of p.zahlungen) {
-        if (!z.datum) continue;
-        await prisma.zahlung.create({
-          data: {
-            projektId,
-            datum: z.datum,
-            betragNetto: z.betragNetto,
-            art: z.art,
-            rechnungsNr: z.rechnungsNr || null,
-            beschreibung: z.beschreibung || null,
-          },
-        });
+      // Zahlungen + Kostenpositionen in EINEM createMany-Aufruf je Tabelle
+      // (deutlich schneller und robuster als hunderte Einzel-Inserts).
+      const zahlungenData = p.zahlungen
+        .filter((z) => z.datum != null)
+        .map((z) => ({
+          projektId,
+          datum: z.datum as Date,
+          betragNetto: z.betragNetto,
+          art: z.art,
+          rechnungsNr: z.rechnungsNr || null,
+          beschreibung: z.beschreibung || null,
+        }));
+      if (zahlungenData.length > 0) {
+        await prisma.zahlung.createMany({ data: zahlungenData });
       }
 
-      // Kostenpositionen schreiben (Eingangsrechnungen aus FIBUZWO).
-      for (const k of p.kostenpositionen) {
-        if (!k.datum) continue;
-        const text = [k.lieferant, k.beschreibung].filter(Boolean).join(' — ');
-        await prisma.kostenposition.create({
-          data: {
+      const kostenData = p.kostenpositionen
+        .filter((k) => k.datum != null)
+        .map((k) => {
+          const text = [k.lieferant, k.beschreibung].filter(Boolean).join(' — ');
+          const beschreibung = text
+            ? `${text}${k.rechnungsNr ? ` (Rg. ${k.rechnungsNr})` : ''}`
+            : k.rechnungsNr || null;
+          return {
             projektId,
-            datum: k.datum,
+            datum: k.datum as Date,
             betragNetto: k.betragNetto,
             art: 'FREMDLEISTUNG',
-            beschreibung: text ? `${text}${k.rechnungsNr ? ` (Rg. ${k.rechnungsNr})` : ''}` : k.rechnungsNr || null,
-          },
+            beschreibung,
+          };
         });
+      if (kostenData.length > 0) {
+        await prisma.kostenposition.createMany({ data: kostenData });
       }
     } catch (e) {
       fehler++;
