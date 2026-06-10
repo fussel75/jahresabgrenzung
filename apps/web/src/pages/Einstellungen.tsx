@@ -1,8 +1,13 @@
-import { useState } from 'react';
-import type { Abgrenzungsmethode } from '@jahresabgrenzung/shared';
+import { useEffect, useState } from 'react';
+import {
+  ALLE_KOSTENARTEN,
+  parseAktiveKostenarten,
+  type Abgrenzungsmethode,
+  type KostenArt,
+} from '@jahresabgrenzung/shared';
 import { api } from '../api';
 import { useAppState } from '../state';
-import { METHODE_LABEL } from '../labels';
+import { METHODE_LABEL, KOSTENART_LABEL } from '../labels';
 import { datum } from '../format';
 import { Card, LeerHinweis } from '../components/ui';
 
@@ -21,6 +26,33 @@ export function Einstellungen() {
     kontoUnfertigeLeistung: einstellungen?.kontoUnfertigeLeistung ?? '',
     kontoBestandsveraend: einstellungen?.kontoBestandsveraend ?? '',
   });
+  const [aktiveArten, setAktiveArten] = useState<Set<KostenArt>>(
+    () => parseAktiveKostenarten(einstellungen?.kostenartenAktiv),
+  );
+
+  // Einstellungen laden asynchron — Formular nachziehen, sobald sie da sind
+  // (sonst bleibt bei Direktaufruf der Seite alles auf Defaults stehen).
+  useEffect(() => {
+    if (!einstellungen) return;
+    setE({
+      standardMethode: einstellungen.standardMethode ?? 'COMPLETED_CONTRACT',
+      steuerberaterName: einstellungen.steuerberaterName ?? '',
+      steuerberaterAdresse: einstellungen.steuerberaterAdresse ?? '',
+      steuerberaterEmail: einstellungen.steuerberaterEmail ?? '',
+      kontoUnfertigeLeistung: einstellungen.kontoUnfertigeLeistung ?? '',
+      kontoBestandsveraend: einstellungen.kontoBestandsveraend ?? '',
+    });
+    setAktiveArten(parseAktiveKostenarten(einstellungen.kostenartenAktiv));
+  }, [einstellungen]);
+
+  function toggleArt(art: KostenArt) {
+    setAktiveArten((alt) => {
+      const neu = new Set(alt);
+      if (neu.has(art)) neu.delete(art);
+      else neu.add(art);
+      return neu;
+    });
+  }
 
   // Neues Geschäftsjahr
   const [neuesJahr, setNeuesJahr] = useState('');
@@ -33,6 +65,8 @@ export function Einstellungen() {
       steuerberaterEmail: e.steuerberaterEmail || null,
       kontoUnfertigeLeistung: e.kontoUnfertigeLeistung || null,
       kontoBestandsveraend: e.kontoBestandsveraend || null,
+      kostenartenAktiv:
+        aktiveArten.size === ALLE_KOSTENARTEN.length ? null : [...aktiveArten].join(','),
     });
     await ladeStammdaten();
     setGespeichert('Einstellungen gespeichert.');
@@ -86,6 +120,29 @@ export function Einstellungen() {
         <select className={inp} value={e.standardMethode} onChange={(ev) => setE({ ...e, standardMethode: ev.target.value as Abgrenzungsmethode })}>
           {METHODEN.map((m) => <option key={m} value={m}>{METHODE_LABEL[m]}</option>)}
         </select>
+      </Card>
+
+      <Card>
+        <h2 className="mb-1 font-semibold text-anthrazit">Kostenarten in der Abgrenzung</h2>
+        <p className="mb-3 text-xs text-gray-500">
+          Welche Kostenarten fließen in die Ist-Kosten und damit in die unfertigen Leistungen ein?
+          Werkzeug zum Durchspielen der Herstellungskosten-Bewertung (Wertunter-/-obergrenze).
+        </p>
+        <div className="flex flex-wrap gap-4">
+          {ALLE_KOSTENARTEN.map((art) => (
+            <label key={art} className="flex items-center gap-2 text-sm text-gray-700">
+              <input type="checkbox" checked={aktiveArten.has(art)} onChange={() => toggleArt(art)} />
+              {KOSTENART_LABEL[art]}
+            </label>
+          ))}
+        </div>
+        {(!aktiveArten.has('MATERIAL') || !aktiveArten.has('LOHN') || !aktiveArten.has('FREMDLEISTUNG')) && (
+          <p className="mt-3 rounded border-l-4 border-amber-500 bg-amber-50 p-2 text-xs text-amber-900">
+            ⚠️ Material, Fertigungslöhne und Fremdleistungen sind nach § 255 HGB{' '}
+            <strong>Pflichtbestandteile</strong> der Herstellungskosten. Das Abwählen dient nur der
+            internen Simulation — Bilanzansatz mit dem Steuerberater abstimmen.
+          </p>
+        )}
       </Card>
 
       <Card>

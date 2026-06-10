@@ -50,8 +50,12 @@ export interface ProjektBerechnung {
   fertigstellungGradManuell?: number | null;
   status: ProjektStatus;
   zahlungen?: Array<Pick<ZahlungInput, 'datum' | 'betragNetto' | 'art'>>;
-  /** Datierte Einzelkosten; wenn vorhanden, werden die Ist-Kosten je Stichtag daraus berechnet. */
-  kostenpositionen?: Array<{ datum: Date; betragNetto: number }>;
+  /**
+   * Datierte Einzelkosten; wenn vorhanden, werden die Ist-Kosten je Stichtag
+   * daraus berechnet. `art` erlaubt das Filtern nach aktiven Kostenarten
+   * (Filterung erfolgt VOR der Berechnung in der Datenaufbereitung).
+   */
+  kostenpositionen?: Array<{ datum: Date; betragNetto: number; art?: string }>;
 }
 
 export interface GeschaeftsjahrBerechnung {

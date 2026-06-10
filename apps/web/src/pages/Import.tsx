@@ -349,7 +349,14 @@ function HapakKarte() {
                       {euro(p.auftragssummeNetto)}
                       <span className="block text-[10px] text-gray-400">{p.auftragssummeQuelle}</span>
                     </td>
-                    <td className="p-2 text-right whitespace-nowrap">{euro(p.istKostenStichtag)}</td>
+                    <td className="p-2 text-right whitespace-nowrap">
+                      {euro(p.istKostenStichtag)}
+                      {p.lohnKosten > 0 && (
+                        <span className="block text-[10px] text-gray-400">
+                          inkl. Lohn {euro(p.lohnKosten)} ({p.lohnStunden.toLocaleString('de-DE')} h)
+                        </span>
+                      )}
+                    </td>
                     <td className="p-2 text-right">{p.anzahlAusgangsrechnungen}/{p.anzahlEingangsrechnungen}</td>
                     <td className="p-2 whitespace-nowrap">
                       {datum(p.startdatum)} – {p.enddatum ? datum(p.enddatum) : '…'}

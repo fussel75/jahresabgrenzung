@@ -2,7 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { parseISO } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { ALLE_METHODEN, berechneAlleMethoden } from '@jahresabgrenzung/shared';
+import {
+  ALLE_METHODEN,
+  ALLE_KOSTENARTEN,
+  berechneAlleMethoden,
+  parseAktiveKostenarten,
+  type KostenArt,
+} from '@jahresabgrenzung/shared';
 import { api, type Projekt } from '../api';
 import { useAppState } from '../state';
 import { effektiverZeitraum, projektZuBerechnung, istAbzugrenzen } from '../hooks';
@@ -22,8 +28,9 @@ import { GeldInput } from '../components/GeldInput';
 export function Projektdetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { geschaeftsjahre, gewaehltesGjId, methode } = useAppState();
+  const { geschaeftsjahre, gewaehltesGjId, methode, einstellungen } = useAppState();
   const gj = geschaeftsjahre.find((g) => g.id === gewaehltesGjId);
+  const aktiveArten = parseAktiveKostenarten(einstellungen?.kostenartenAktiv);
 
   const [projekt, setProjekt] = useState<Projekt | null>(null);
   const [laedt, setLaedt] = useState(true);
@@ -42,12 +49,18 @@ export function Projektdetail() {
 
   const vergleich = useMemo(() => {
     if (!projekt || !gj) return null;
-    return berechneAlleMethoden(projektZuBerechnung(projekt), {
+    const input = projektZuBerechnung(projekt);
+    // Globaler Kostenarten-Schalter (Einstellungen) auch hier anwenden.
+    input.kostenpositionen = input.kostenpositionen?.filter(
+      (k) => !k.art || aktiveArten.has(k.art as KostenArt),
+    );
+    return berechneAlleMethoden(input, {
       jahr: gj.jahr,
       beginn: parseISO(gj.beginn),
       ende: parseISO(gj.ende),
     });
-  }, [projekt, gj]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projekt, gj, einstellungen?.kostenartenAktiv]);
 
   if (laedt) return <Spinner />;
   if (!projekt) return <LeerHinweis>Projekt nicht gefunden.</LeerHinweis>;
@@ -58,14 +71,26 @@ export function Projektdetail() {
   // (z.B. vor dem GJ abgeschlossen, Status Angebot/Storniert).
   const ausserhalbGj = vergleich !== null && ALLE_METHODEN.every((m) => !vergleich[m]);
 
-  // Ist-Kosten stichtagsgenau zum gewählten GJ (aus datierten Kostenpositionen;
-  // Fallback auf den pauschalen Feldwert, wenn keine Belege vorliegen).
+  // Ist-Kosten stichtagsgenau zum gewählten GJ (aus datierten Kostenpositionen,
+  // gefiltert auf aktive Kostenarten; Fallback auf den pauschalen Feldwert).
   const istKostenAnzeige =
     gj && (projekt.kostenpositionen?.length ?? 0) > 0
       ? projekt.kostenpositionen!
           .filter((k) => parseISO(k.datum) <= parseISO(gj.ende))
+          .filter((k) => aktiveArten.has(k.art as KostenArt))
           .reduce((s, k) => s + k.betragNetto, 0)
       : projekt.istKostenStichtag;
+
+  // Kostenarten-Zusammenfassung bis GJ-Ende (inaktive Arten werden markiert).
+  const kostenJeArt = gj
+    ? ALLE_KOSTENARTEN.map((art) => ({
+        art,
+        summe: (projekt.kostenpositionen ?? [])
+          .filter((k) => k.art === art && parseISO(k.datum) <= parseISO(gj.ende))
+          .reduce((s, k) => s + k.betragNetto, 0),
+        aktiv: aktiveArten.has(art),
+      })).filter((x) => x.summe !== 0)
+    : [];
 
   const diagrammDaten = vergleich
     ? ALLE_METHODEN.map((m) => ({
@@ -219,7 +244,7 @@ export function Projektdetail() {
       {/* Zahlungen & Kostenpositionen */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Zahlungen projekt={projekt} onAenderung={laden} />
-        <Kostenpositionen projekt={projekt} onAenderung={laden} />
+        <Kostenpositionen projekt={projekt} onAenderung={laden} zusammenfassung={kostenJeArt} />
       </div>
     </div>
   );
@@ -365,7 +390,21 @@ function Zahlungen({ projekt, onAenderung }: { projekt: Projekt; onAenderung: ()
   );
 }
 
-function Kostenpositionen({ projekt, onAenderung }: { projekt: Projekt; onAenderung: () => void }) {
+interface KostenartSumme {
+  art: KostenArt;
+  summe: number;
+  aktiv: boolean;
+}
+
+function Kostenpositionen({
+  projekt,
+  onAenderung,
+  zusammenfassung,
+}: {
+  projekt: Projekt;
+  onAenderung: () => void;
+  zusammenfassung: KostenartSumme[];
+}) {
   const [datumF, setDatumF] = useState('');
   const [betrag, setBetrag] = useState(0);
   const [art, setArt] = useState('MATERIAL');
@@ -384,7 +423,22 @@ function Kostenpositionen({ projekt, onAenderung }: { projekt: Projekt; onAender
   const inp = 'rounded border border-gray-300 px-2 py-1 text-sm';
   return (
     <Card>
-      <h2 className="mb-3 font-semibold text-anthrazit">Kostenpositionen</h2>
+      <h2 className="mb-2 font-semibold text-anthrazit">Kostenpositionen</h2>
+      {zusammenfassung.length > 0 && (
+        <div className="mb-3 flex flex-wrap gap-2 text-xs">
+          {zusammenfassung.map((z) => (
+            <span
+              key={z.art}
+              title={z.aktiv ? 'wird eingerechnet' : 'in den Einstellungen deaktiviert — wird NICHT eingerechnet'}
+              className={`rounded-full px-2.5 py-0.5 font-medium ${
+                z.aktiv ? 'bg-gray-100 text-gray-800' : 'bg-gray-50 text-gray-400 line-through'
+              }`}
+            >
+              {KOSTENART_LABEL[z.art]} {euro(z.summe)}
+            </span>
+          ))}
+        </div>
+      )}
       <table className="w-full text-sm">
         <tbody>
           {(projekt.kostenpositionen ?? []).map((k) => (

@@ -88,4 +88,7 @@ model Einstellungen {
   steuerberaterEmail     String?
   kontoUnfertigeLeistung String? // z.B. "0860" — konfigurierbar, kein Hardcode
   kontoBestandsveraend   String? // z.B. "8990"
+  // CSV der in Ist-Kosten/unfertige Leistungen eingerechneten Kostenarten
+  // (z.B. "MATERIAL,LOHN,FREMDLEISTUNG"); null/leer = alle.
+  kostenartenAktiv       String?
 }

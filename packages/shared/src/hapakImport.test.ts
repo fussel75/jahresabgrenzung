@@ -2,9 +2,11 @@ import { describe, it, expect } from 'vitest';
 import {
   mappeHapakImport,
   anzeigeNummer,
+  aggregiereLohnJeProjekt,
   type HapakDokRow,
   type HapakFibuRow,
   type HapakAdrRow,
+  type HapakLohnRow,
 } from './hapakImport.js';
 
 const d = (iso: string) => new Date(`${iso}T00:00:00`);
@@ -134,5 +136,57 @@ describe('mappeHapakImport', () => {
     expect(r[0].auftragssummeNetto).toBe(8000);
     const storno = r[0].zahlungen.find((z) => z.art === 'STORNO');
     expect(storno?.betragNetto).toBe(-2000);
+  });
+});
+
+describe('aggregiereLohnJeProjekt (Lohnbuch -> monatliche Kostenpositionen)', () => {
+  function lohn(over: Partial<HapakLohnRow>): HapakLohnRow {
+    return { ktr: 'PX1', tag: null, minuten: 480, pause: 0, satzEk: 30, storno: false, ...over };
+  }
+
+  it('aggregiert monatlich: Stunden x Satz, Pause abgezogen, Datum = Monatsletzter', () => {
+    const rows = [
+      lohn({ tag: d('2026-11-03'), minuten: 570, pause: 30 }), // 9h x 30 = 270
+      lohn({ tag: d('2026-11-10'), minuten: 480 }), // 8h x 30 = 240
+      lohn({ tag: d('2026-12-01'), minuten: 480 }), // anderer Monat
+    ];
+    const m = aggregiereLohnJeProjekt(rows);
+    const px1 = m.get('PX1')!;
+    expect(px1).toHaveLength(2);
+    expect(px1[0].betragNetto).toBe(510);
+    expect(px1[0].stunden).toBe(17);
+    expect(px1[0].datum).toEqual(new Date(2026, 10, 30)); // 30.11.2026
+    expect(px1[0].art).toBe('LOHN');
+    expect(px1[0].beschreibung).toContain('11/2026');
+  });
+
+  it('filtert Storno, fehlendes KTR und Belege nach dem Stichtag', () => {
+    const rows = [
+      lohn({ tag: d('2026-11-03') }),
+      lohn({ tag: d('2026-11-04'), storno: true }),
+      lohn({ tag: d('2026-11-05'), ktr: '' }),
+      lohn({ tag: d('2027-01-10') }), // nach Stichtag
+    ];
+    const m = aggregiereLohnJeProjekt(rows, d('2026-12-31'));
+    expect(m.get('PX1')).toHaveLength(1);
+    expect(m.get('PX1')![0].betragNetto).toBe(240);
+  });
+
+  it('fliesst in mappeHapakImport ein: istKosten = Eingangsrechnungen + Lohn', () => {
+    const fibu = [
+      fib({ art: 'RE', typ: 'HR', ktr: 'PX1', netto: 1000, kontoG: '5400', belegdat: d('2026-02-01') }),
+    ];
+    const lohnRows = [lohn({ tag: d('2026-03-15'), minuten: 600, satzEk: 25 })]; // 10h x 25 = 250
+    const r = mappeHapakImport([], fibu, adr, { abJahr: 2024, lohn: lohnRows });
+    expect(r[0].istKostenStichtag).toBe(1250);
+    expect(r[0].lohnKosten).toBe(250);
+    expect(r[0].lohnStunden).toBe(10);
+    expect(r[0].kostenpositionen.filter((k) => k.art === 'LOHN')).toHaveLength(1);
+  });
+
+  it('Projekt nur mit Lohnbuchungen (ohne Rechnungen) erscheint trotzdem', () => {
+    const lohnRows = [lohn({ ktr: 'PNEU', tag: d('2026-05-02') })];
+    const r = mappeHapakImport([], [], adr, { abJahr: 2024, lohn: lohnRows });
+    expect(r.map((p) => p.projname)).toContain('PNEU');
   });
 });

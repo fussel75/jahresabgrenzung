@@ -66,6 +66,7 @@ export interface Einstellungen {
   steuerberaterEmail?: string | null;
   kontoUnfertigeLeistung?: string | null;
   kontoBestandsveraend?: string | null;
+  kostenartenAktiv?: string | null;
 }
 
 export interface HapakTestSchritt {
@@ -93,6 +94,8 @@ export interface ImportProjekt {
   auftragssummeNetto: number;
   auftragssummeQuelle: string;
   istKostenStichtag: number;
+  lohnKosten: number;
+  lohnStunden: number;
   startdatum: string | null;
   enddatum: string | null;
   laeuft: boolean;

@@ -5,6 +5,7 @@ import {
   type HapakDokRow,
   type HapakFibuRow,
   type HapakAdrRow,
+  type HapakLohnRow,
 } from '@jahresabgrenzung/shared';
 import {
   hapakConfigAusEnv,
@@ -69,12 +70,15 @@ export async function hapakImportVorschau(
     const datenPfad = `${config.basisPfad}/Daten`;
     const fibuPfad = `${config.basisPfad}/Fibu`;
     const adrPfad = `${config.basisPfad}/Adressen`;
+    const lohnPfad = `${config.basisPfad}/Lohn`;
     const tmp = await tempVerzeichnis();
 
-    const [dokRoh, fibuRoh, adrRoh] = await Promise.all([
+    const [dokRoh, fibuRoh, adrRoh, lohnRoh] = await Promise.all([
       ladeDbf(session, datenPfad, 'DOKUMENT.DBF', tmp),
       ladeDbf(session, fibuPfad, 'FIBUZWO.DBF', tmp),
       ladeDbf(session, adrPfad, 'ADRESSEN.DBF', tmp),
+      // Lohnbuch ist optional — wenn nicht lesbar, läuft der Import ohne Lohn.
+      ladeDbf(session, lohnPfad, 'LOHNBUCH.DBF', tmp).catch(() => []),
     ]);
 
     const dokumente: HapakDokRow[] = dokRoh.map((r) => ({
@@ -93,7 +97,16 @@ export async function hapakImportVorschau(
       plz: S(r.PLZ), ort: S(r.ORT),
     }));
 
-    const projekte = mappeHapakImport(dokumente, fibu, adressen, { abJahr, stichtag });
+    const lohn: HapakLohnRow[] = lohnRoh.map((r) => ({
+      ktr: S(r.KTR),
+      tag: D(r.TAG),
+      minuten: N(r.MINSUM),
+      pause: N(r.PAUSE),
+      satzEk: N(r.LSATZ_EK),
+      storno: N(r.STORNOFLAG) === 1,
+    }));
+
+    const projekte = mappeHapakImport(dokumente, fibu, adressen, { abJahr, stichtag, lohn });
     return { ok: true, abJahr, stichtag: stichtag?.toISOString() ?? null, projekte };
   } catch (e) {
     return { ...basis, fehler: (e as Error).message };

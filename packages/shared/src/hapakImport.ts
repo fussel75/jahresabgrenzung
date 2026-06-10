@@ -54,6 +54,16 @@ export interface HapakAdrRow {
   ort: string;
 }
 
+/** Zeile aus LOHNBUCH.DBF (Zeiterfassung je Mitarbeiter und Tag). */
+export interface HapakLohnRow {
+  ktr: string; // Projekt (PROJNAME)
+  tag: Date | null;
+  minuten: number; // MINSUM
+  pause: number; // PAUSE (Minuten)
+  satzEk: number; // LSATZ_EK = interner Stundensatz in €
+  storno: boolean; // STORNOFLAG
+}
+
 // --- Ausgabe --------------------------------------------------------------
 
 export interface ImportZahlung {
@@ -75,6 +85,63 @@ export interface ImportKostenposition {
   /** Aus dem Aufwandskonto abgeleitete Kostenart (SKR04-Heuristik). */
   art: KostenArt;
   konto: string;
+  /** Nur bei Lohn-Positionen: Stunden des Monats. */
+  stunden?: number;
+}
+
+/**
+ * Aggregiert Lohnbuch-Zeilen zu monatlichen Kostenpositionen je Projekt (KTR).
+ * Lohnkosten = (Minuten − Pause) / 60 × interner Stundensatz, monatlich
+ * summiert (39k Einzeltage würden die Listen fluten). Datum = Monatsletzter,
+ * damit die Stichtags-Filterung (31.12.) korrekt greift.
+ */
+export function aggregiereLohnJeProjekt(
+  rows: HapakLohnRow[],
+  stichtag?: Date | null,
+): Map<string, ImportKostenposition[]> {
+  interface Monat {
+    stunden: number;
+    kosten: number;
+  }
+  const proMonat = new Map<string, Map<string, Monat>>(); // ktr -> "yyyy-mm" -> Monat
+
+  for (const r of rows) {
+    const ktr = r.ktr.trim();
+    if (!ktr || r.storno || !(r.tag instanceof Date)) continue;
+    if (stichtag && r.tag > stichtag) continue;
+    const stunden = Math.max(0, r.minuten - r.pause) / 60;
+    const kosten = stunden * r.satzEk;
+    if (kosten <= 0) continue;
+
+    const key = `${r.tag.getFullYear()}-${String(r.tag.getMonth() + 1).padStart(2, '0')}`;
+    if (!proMonat.has(ktr)) proMonat.set(ktr, new Map());
+    const m = proMonat.get(ktr)!;
+    const akt = m.get(key) ?? { stunden: 0, kosten: 0 };
+    akt.stunden += stunden;
+    akt.kosten += kosten;
+    m.set(key, akt);
+  }
+
+  const ergebnis = new Map<string, ImportKostenposition[]>();
+  for (const [ktr, monate] of proMonat) {
+    const liste: ImportKostenposition[] = [...monate.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, m]) => {
+        const [jahr, monat] = key.split('-').map(Number);
+        return {
+          datum: new Date(jahr, monat, 0), // Monatsletzter
+          betragNetto: round2(m.kosten),
+          rechnungsNr: '',
+          lieferant: '',
+          beschreibung: `Eigenleistung Lohn ${String(monat).padStart(2, '0')}/${jahr} (${m.stunden.toFixed(1).replace('.', ',')} h)`,
+          art: 'LOHN' as KostenArt,
+          konto: '',
+          stunden: round2(m.stunden),
+        };
+      });
+    ergebnis.set(ktr, liste);
+  }
+  return ergebnis;
 }
 
 /**
@@ -100,7 +167,9 @@ export interface ImportProjekt {
   kundenadresse?: string;
   auftragssummeNetto: number; // Vorschlag (editierbar)
   auftragssummeQuelle: string; // woraus abgeleitet
-  istKostenStichtag: number; // Σ Eingangsrechnungen (bis Stichtag)
+  istKostenStichtag: number; // Σ Eingangsrechnungen + Lohn (bis Stichtag)
+  lohnKosten: number; // davon Lohn (Eigenleistung)
+  lohnStunden: number;
   startdatum: Date | null;
   /** Geschätzter echter Projekt-Start: Datum der ersten Ausgangsrechnung (sonst null). */
   projektStartGeschaetzt: Date | null;
@@ -116,6 +185,7 @@ export interface ImportProjekt {
 export interface MappingOptionen {
   abJahr: number; // nur Projekte mit Aktivität ab diesem Jahr
   stichtag?: Date | null; // Grenze für istKosten/Anzahlungen (optional)
+  lohn?: HapakLohnRow[]; // Lohnbuch-Zeilen (werden monatlich aggregiert)
 }
 
 function jahr(d: Date | null): number | null {
@@ -187,17 +257,26 @@ export function mappeHapakImport(
     fibuByProj.get(p)!.push(f);
   }
 
-  const projektnamen = new Set<string>([...dokByProj.keys(), ...fibuByProj.keys()]);
+  // Lohnbuch monatlich je Projekt aggregieren (bereits stichtagsgefiltert).
+  const lohnByProj = aggregiereLohnJeProjekt(opt.lohn ?? [], stichtag);
+
+  const projektnamen = new Set<string>([
+    ...dokByProj.keys(),
+    ...fibuByProj.keys(),
+    ...lohnByProj.keys(),
+  ]);
   const ergebnis: ImportProjekt[] = [];
 
   for (const proj of projektnamen) {
     const dks = dokByProj.get(proj) ?? [];
     const fbs = fibuByProj.get(proj) ?? [];
+    const lohnPos = lohnByProj.get(proj) ?? [];
 
     // Aktivität ab Jahr?
     const aktiv =
       dks.some((d) => (jahr(d.datum) ?? 0) >= opt.abJahr) ||
-      fbs.some((f) => (jahr(f.belegdat) ?? 0) >= opt.abJahr);
+      fbs.some((f) => (jahr(f.belegdat) ?? 0) >= opt.abJahr) ||
+      lohnPos.some((l) => (jahr(l.datum) ?? 0) >= opt.abJahr);
     if (!aktiv) continue;
 
     // Projektkopf (NAME == PROJNAME) für Bezeichnung/Kunde.
@@ -227,22 +306,30 @@ export function mappeHapakImport(
     const ausgang = fbs.filter((f) => f.art === 'RA' && f.typ === 'HR');
     const gutschrift = fbs.filter((f) => f.art === 'RA' && f.typ === 'HG');
 
+    // Lohn (bereits monatlich aggregiert + stichtagsgefiltert).
+    const lohnKosten = round2(lohnPos.reduce((s, l) => s + l.betragNetto, 0));
+    const lohnStunden = round2(lohnPos.reduce((s, l) => s + (l.stunden ?? 0), 0));
+
     const istKosten = round2(
-      eingang.filter((f) => bisStichtag(f.belegdat)).reduce((s, f) => s + f.netto, 0),
+      eingang.filter((f) => bisStichtag(f.belegdat)).reduce((s, f) => s + f.netto, 0) +
+        lohnKosten,
     );
 
-    // Eingangsrechnungen als einzelne Kostenpositionen aufbereiten.
-    const kostenpositionen: ImportKostenposition[] = eingang
-      .filter((f) => bisStichtag(f.belegdat))
-      .map((f) => ({
-        datum: f.belegdat,
-        betragNetto: round2(f.netto),
-        rechnungsNr: f.rnr.trim(),
-        lieferant: f.adrSuch.trim(),
-        beschreibung: f.betreff.trim(),
-        art: kontoZuKostenart(f.kontoG),
-        konto: f.kontoG.trim(),
-      }));
+    // Eingangsrechnungen + Lohn-Monate als einzelne Kostenpositionen.
+    const kostenpositionen: ImportKostenposition[] = [
+      ...eingang
+        .filter((f) => bisStichtag(f.belegdat))
+        .map((f) => ({
+          datum: f.belegdat,
+          betragNetto: round2(f.netto),
+          rechnungsNr: f.rnr.trim(),
+          lieferant: f.adrSuch.trim(),
+          beschreibung: f.betreff.trim(),
+          art: kontoZuKostenart(f.kontoG),
+          konto: f.kontoG.trim(),
+        })),
+      ...lohnPos,
+    ];
 
     const zahlungen: ImportZahlung[] = [];
     for (const f of ausgang.filter((x) => bisStichtag(x.belegdat))) {
@@ -303,6 +390,8 @@ export function mappeHapakImport(
       auftragssummeNetto,
       auftragssummeQuelle,
       istKostenStichtag: istKosten,
+      lohnKosten,
+      lohnStunden,
       startdatum,
       enddatum,
       laeuft: enddatum === null,

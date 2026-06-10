@@ -2,6 +2,7 @@ import {
   Abgrenzungsmethode,
   ALLE_METHODEN,
   berechneAbgrenzung,
+  parseAktiveKostenarten,
   type AbgrenzungsErgebnis,
 } from '@jahresabgrenzung/shared';
 import type { Einstellungen, Geschaeftsjahr } from '@prisma/client';
@@ -37,6 +38,16 @@ export async function ladeAbgrenzung(
   const projekte = await prisma.projekt.findMany({
     include: { zahlungen: true, kostenpositionen: true },
   });
-  const ergebnis = berechneAbgrenzung(projekte.map(toBerechnung), gj, methode);
+
+  // Globaler Kostenarten-Schalter: nur aktive Arten fließen in die
+  // Ist-Kosten/unfertige-Leistungen-Berechnung ein (Simulation der
+  // Herstellungskosten-Wahlrechte; siehe Einstellungen).
+  const aktiveArten = parseAktiveKostenarten(einstellungen?.kostenartenAktiv);
+  const berechnungsInput = projekte.map(toBerechnung).map((p) => ({
+    ...p,
+    kostenpositionen: p.kostenpositionen?.filter((k) => !k.art || aktiveArten.has(k.art as never)),
+  }));
+
+  const ergebnis = berechneAbgrenzung(berechnungsInput, gj, methode);
   return { kontext: { ergebnis, geschaeftsjahr: gj, einstellungen } };
 }

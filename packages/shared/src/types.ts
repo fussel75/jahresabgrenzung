@@ -44,6 +44,28 @@ export const KostenArt = {
 } as const;
 export type KostenArt = (typeof KostenArt)[keyof typeof KostenArt];
 
+export const ALLE_KOSTENARTEN: KostenArt[] = [
+  'MATERIAL',
+  'LOHN',
+  'SUBUNTERNEHMER',
+  'FREMDLEISTUNG',
+  'SONSTIGES',
+];
+
+/**
+ * Parst die Einstellung "kostenartenAktiv" (CSV, z.B. "MATERIAL,LOHN").
+ * Null/leer = alle Kostenarten aktiv.
+ */
+export function parseAktiveKostenarten(csv: string | null | undefined): Set<KostenArt> {
+  const s = (csv ?? '').trim();
+  if (!s) return new Set(ALLE_KOSTENARTEN);
+  const teile = s
+    .split(',')
+    .map((t) => t.trim().toUpperCase())
+    .filter((t): t is KostenArt => (ALLE_KOSTENARTEN as string[]).includes(t));
+  return teile.length > 0 ? new Set(teile) : new Set(ALLE_KOSTENARTEN);
+}
+
 export const Abgrenzungsmethode = {
   COMPLETED_CONTRACT: 'COMPLETED_CONTRACT',
   ZEITANTEILIG: 'ZEITANTEILIG',
@@ -135,5 +157,6 @@ export const einstellungenSchema = z.object({
   steuerberaterEmail: z.string().email().optional().nullable(),
   kontoUnfertigeLeistung: z.string().optional().nullable(),
   kontoBestandsveraend: z.string().optional().nullable(),
+  kostenartenAktiv: z.string().optional().nullable(),
 });
 export type EinstellungenInput = z.infer<typeof einstellungenSchema>;
