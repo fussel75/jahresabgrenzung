@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ApiError, api } from '../api';
 import { STATUS_LABEL, GEWERK_LABEL } from '../labels';
 import { Card } from '../components/ui';
+import { GeldInput } from '../components/GeldInput';
 
 const leer = {
   projektnummer: '',
@@ -70,19 +71,19 @@ export function ProjektNeu() {
             <input className={inp} value={f.kundenadresse} onChange={(e) => set('kundenadresse', e.target.value)} />
           </Feld>
           <Feld label="Start geplant *" fehler={fehlerFuer('startdatumGeplant')}>
-            <input type="date" className={inp} value={f.startdatumGeplant} onChange={(e) => set('startdatumGeplant', e.target.value)} />
+            <input type="date" lang="de-DE" className={inp} value={f.startdatumGeplant} onChange={(e) => set('startdatumGeplant', e.target.value)} />
           </Feld>
           <Feld label="Ende geplant *" fehler={fehlerFuer('enddatumGeplant')}>
-            <input type="date" className={inp} value={f.enddatumGeplant} onChange={(e) => set('enddatumGeplant', e.target.value)} />
+            <input type="date" lang="de-DE" className={inp} value={f.enddatumGeplant} onChange={(e) => set('enddatumGeplant', e.target.value)} />
           </Feld>
-          <Feld label="Auftragssumme netto *" fehler={fehlerFuer('auftragssummeNetto')}>
-            <input type="number" className={inp} value={f.auftragssummeNetto} onChange={(e) => set('auftragssummeNetto', e.target.value)} />
+          <Feld label="Auftragssumme netto (€) *" fehler={fehlerFuer('auftragssummeNetto')}>
+            <GeldInput className={inp} value={Number(f.auftragssummeNetto)} onChange={(n) => set('auftragssummeNetto', String(n))} />
           </Feld>
-          <Feld label="Geplante Gesamtkosten *" fehler={fehlerFuer('gesamtkostenGeplant')}>
-            <input type="number" className={inp} value={f.gesamtkostenGeplant} onChange={(e) => set('gesamtkostenGeplant', e.target.value)} />
+          <Feld label="Geplante Gesamtkosten (€) *" fehler={fehlerFuer('gesamtkostenGeplant')}>
+            <GeldInput className={inp} value={Number(f.gesamtkostenGeplant)} onChange={(n) => set('gesamtkostenGeplant', String(n))} />
           </Feld>
-          <Feld label="Ist-Kosten (Stichtag)">
-            <input type="number" className={inp} value={f.istKostenStichtag} onChange={(e) => set('istKostenStichtag', e.target.value)} />
+          <Feld label="Ist-Kosten (Stichtag, €)">
+            <GeldInput className={inp} value={Number(f.istKostenStichtag)} onChange={(n) => set('istKostenStichtag', String(n))} />
           </Feld>
           <Feld label="Status">
             <select className={inp} value={f.status} onChange={(e) => set('status', e.target.value)}>

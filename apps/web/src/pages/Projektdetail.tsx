@@ -17,6 +17,7 @@ import {
 } from '../labels';
 import { Card, StatusBadge, AbgrenzungsBadge, HgbWarnung, Spinner, LeerHinweis } from '../components/ui';
 import { GanttChart } from '../components/GanttChart';
+import { GeldInput } from '../components/GeldInput';
 
 export function Projektdetail() {
   const { id } = useParams<{ id: string }>();
@@ -251,15 +252,24 @@ function StammdatenForm({ projekt, onGespeichert }: { projekt: Projekt; onGespei
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <label className="text-xs text-gray-500">Bezeichnung<input className={inp} value={f.bezeichnung} onChange={(e) => setF({ ...f, bezeichnung: e.target.value })} /></label>
         <label className="text-xs text-gray-500">Kunde<input className={inp} value={f.kunde} onChange={(e) => setF({ ...f, kunde: e.target.value })} /></label>
-        <label className="text-xs text-gray-500">Auftragssumme netto<input type="number" className={inp} value={f.auftragssummeNetto} onChange={(e) => setF({ ...f, auftragssummeNetto: e.target.value as never })} /></label>
-        <label className="text-xs text-gray-500">Geplante Gesamtkosten<input type="number" className={inp} value={f.gesamtkostenGeplant} onChange={(e) => setF({ ...f, gesamtkostenGeplant: e.target.value as never })} /></label>
-        <label className="text-xs text-gray-500">Ist-Kosten (Stichtag)<input type="number" className={inp} value={f.istKostenStichtag} onChange={(e) => setF({ ...f, istKostenStichtag: e.target.value as never })} /></label>
+        <label className="text-xs text-gray-500">
+          Auftragssumme netto (€)
+          <GeldInput className={inp} value={Number(f.auftragssummeNetto)} onChange={(n) => setF({ ...f, auftragssummeNetto: n as never })} />
+        </label>
+        <label className="text-xs text-gray-500">
+          Geplante Gesamtkosten (€)
+          <GeldInput className={inp} value={Number(f.gesamtkostenGeplant)} onChange={(n) => setF({ ...f, gesamtkostenGeplant: n as never })} />
+        </label>
+        <label className="text-xs text-gray-500">
+          Ist-Kosten (Stichtag, €)
+          <GeldInput className={inp} value={Number(f.istKostenStichtag)} onChange={(n) => setF({ ...f, istKostenStichtag: n as never })} />
+        </label>
         <label className="text-xs text-gray-500">
           Projekt-Start
-          <input type="date" className={inp} value={f.projektStartManuell} onChange={(e) => setF({ ...f, projektStartManuell: e.target.value })} />
+          <input type="date" lang="de-DE" className={inp} value={f.projektStartManuell} onChange={(e) => setF({ ...f, projektStartManuell: e.target.value })} />
           <span className="mt-0.5 block text-[10px] text-gray-400">Echter Baubeginn — leer = Projekt gilt als noch nicht gestartet.</span>
         </label>
-        <label className="text-xs text-gray-500">Ende (Ist)<input type="date" className={inp} value={f.enddatumIst} onChange={(e) => setF({ ...f, enddatumIst: e.target.value })} /></label>
+        <label className="text-xs text-gray-500">Ende (Ist)<input type="date" lang="de-DE" className={inp} value={f.enddatumIst} onChange={(e) => setF({ ...f, enddatumIst: e.target.value })} /></label>
         <label className="text-xs text-gray-500">Manueller Grad (0–1)<input type="number" step="0.05" min="0" max="1" className={inp} value={f.fertigstellungGradManuell} onChange={(e) => setF({ ...f, fertigstellungGradManuell: e.target.value as never })} /></label>
         <label className="text-xs text-gray-500">Status
           <select className={inp} value={f.status} onChange={(e) => setF({ ...f, status: e.target.value as never })}>
@@ -277,13 +287,13 @@ function StammdatenForm({ projekt, onGespeichert }: { projekt: Projekt; onGespei
 
 function Zahlungen({ projekt, onAenderung }: { projekt: Projekt; onAenderung: () => void }) {
   const [datumF, setDatumF] = useState('');
-  const [betrag, setBetrag] = useState('');
+  const [betrag, setBetrag] = useState(0);
   const [art, setArt] = useState('ANZAHLUNG');
 
   async function hinzufuegen() {
     if (!datumF || !betrag) return;
-    await api.zahlungAnlegen(projekt.id, { datum: datumF, betragNetto: Number(betrag), art });
-    setDatumF(''); setBetrag('');
+    await api.zahlungAnlegen(projekt.id, { datum: datumF, betragNetto: betrag, art });
+    setDatumF(''); setBetrag(0);
     onAenderung();
   }
   async function loeschen(id: string) {
@@ -309,8 +319,8 @@ function Zahlungen({ projekt, onAenderung }: { projekt: Projekt; onAenderung: ()
         </tbody>
       </table>
       <div className="mt-3 flex flex-wrap gap-2">
-        <input type="date" className={inp} value={datumF} onChange={(e) => setDatumF(e.target.value)} />
-        <input type="number" placeholder="Betrag" className={`${inp} w-28`} value={betrag} onChange={(e) => setBetrag(e.target.value)} />
+        <input type="date" lang="de-DE" className={inp} value={datumF} onChange={(e) => setDatumF(e.target.value)} />
+        <GeldInput className={`${inp} w-28`} value={betrag} onChange={setBetrag} />
         <select className={inp} value={art} onChange={(e) => setArt(e.target.value)}>
           {Object.entries(ZAHLUNGSART_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
@@ -322,13 +332,13 @@ function Zahlungen({ projekt, onAenderung }: { projekt: Projekt; onAenderung: ()
 
 function Kostenpositionen({ projekt, onAenderung }: { projekt: Projekt; onAenderung: () => void }) {
   const [datumF, setDatumF] = useState('');
-  const [betrag, setBetrag] = useState('');
+  const [betrag, setBetrag] = useState(0);
   const [art, setArt] = useState('MATERIAL');
 
   async function hinzufuegen() {
     if (!datumF || !betrag) return;
-    await api.kostenpositionAnlegen(projekt.id, { datum: datumF, betragNetto: Number(betrag), art });
-    setDatumF(''); setBetrag('');
+    await api.kostenpositionAnlegen(projekt.id, { datum: datumF, betragNetto: betrag, art });
+    setDatumF(''); setBetrag(0);
     onAenderung();
   }
   async function loeschen(id: string) {
@@ -354,8 +364,8 @@ function Kostenpositionen({ projekt, onAenderung }: { projekt: Projekt; onAender
         </tbody>
       </table>
       <div className="mt-3 flex flex-wrap gap-2">
-        <input type="date" className={inp} value={datumF} onChange={(e) => setDatumF(e.target.value)} />
-        <input type="number" placeholder="Betrag" className={`${inp} w-28`} value={betrag} onChange={(e) => setBetrag(e.target.value)} />
+        <input type="date" lang="de-DE" className={inp} value={datumF} onChange={(e) => setDatumF(e.target.value)} />
+        <GeldInput className={`${inp} w-28`} value={betrag} onChange={setBetrag} />
         <select className={inp} value={art} onChange={(e) => setArt(e.target.value)}>
           {Object.entries(KOSTENART_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
