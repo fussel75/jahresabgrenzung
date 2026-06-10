@@ -50,6 +50,8 @@ export interface ProjektBerechnung {
   fertigstellungGradManuell?: number | null;
   status: ProjektStatus;
   zahlungen?: Array<Pick<ZahlungInput, 'datum' | 'betragNetto' | 'art'>>;
+  /** Datierte Einzelkosten; wenn vorhanden, werden die Ist-Kosten je Stichtag daraus berechnet. */
+  kostenpositionen?: Array<{ datum: Date; betragNetto: number }>;
 }
 
 export interface GeschaeftsjahrBerechnung {
@@ -186,6 +188,25 @@ export function erhalteneAnzahlungenBisStichtag(
   return Math.max(0, round2(summe));
 }
 
+/**
+ * Ist-Kosten zum Stichtag: Wenn datierte Kostenpositionen vorliegen, wird
+ * stichtagsgenau aus ihnen summiert (Belege nach dem Stichtag zählen nicht).
+ * Sonst Fallback auf den pauschalen Feldwert `istKostenStichtag`.
+ */
+export function istKostenBisStichtag(
+  p: ProjektBerechnung,
+  gj: GeschaeftsjahrBerechnung,
+): number {
+  if (p.kostenpositionen && p.kostenpositionen.length > 0) {
+    return round2(
+      p.kostenpositionen
+        .filter((k) => k.datum <= gj.ende)
+        .reduce((s, k) => s + k.betragNetto, 0),
+    );
+  }
+  return p.istKostenStichtag;
+}
+
 /** Fertigstellungsgrad aus Kostenfortschritt; division-by-zero-sicher. */
 export function fertigstellungsgradKosten(
   istKosten: number,
@@ -222,7 +243,7 @@ export function berechneProjektAbgrenzung(
 
   const A = p.auftragssummeNetto;
   const GK = p.gesamtkostenGeplant;
-  const IK = p.istKostenStichtag;
+  const IK = istKostenBisStichtag(p, gj);
   const erhAnz = erhalteneAnzahlungenBisStichtag(p, gj);
 
   // Standardwerte: Projekt liegt komplett in einer Periode.

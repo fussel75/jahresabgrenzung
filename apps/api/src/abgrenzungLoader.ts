@@ -34,7 +34,9 @@ export async function ladeAbgrenzung(
     };
   }
 
-  const projekte = await prisma.projekt.findMany({ include: { zahlungen: true } });
+  const projekte = await prisma.projekt.findMany({
+    include: { zahlungen: true, kostenpositionen: true },
+  });
   const ergebnis = berechneAbgrenzung(projekte.map(toBerechnung), gj, methode);
   return { kontext: { ergebnis, geschaeftsjahr: gj, einstellungen } };
 }

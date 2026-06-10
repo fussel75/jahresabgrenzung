@@ -369,7 +369,9 @@ function HapakKarte() {
           <p className="mt-2 text-xs text-gray-400">
             Sammelprojekte sind standardmäßig nicht angehakt — sie verfälschen die Abgrenzung
             (Bündel vieler Kleinjobs). Beim erneuten Import werden Projekte mit gleichem
-            HAPAK-Schlüssel aktualisiert.
+            HAPAK-Schlüssel aktualisiert. Die Übernahme importiert immer <strong>alle</strong> Belege
+            — die Vorschau-Beträge oben sind nur die Sicht bis zum gewählten Stichtag; die App
+            rechnet je Geschäftsjahr stichtagsgenau.
           </p>
         </div>
       )}

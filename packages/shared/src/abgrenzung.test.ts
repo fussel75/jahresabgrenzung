@@ -226,6 +226,35 @@ describe('Testfall 5: Projekt ohne Ist-Kosten (Cost-to-Cost, Division durch 0)',
   });
 });
 
+// --- Zusatz: stichtagsgenaue Ist-Kosten aus Kostenpositionen ---------------
+describe('Ist-Kosten werden aus datierten Kostenpositionen je Stichtag berechnet', () => {
+  const p = projekt({
+    startdatumGeplant: d(2026, 3, 1),
+    enddatumGeplant: d(2027, 6, 30),
+    istKostenStichtag: 99999, // Fallback-Wert — darf NICHT verwendet werden
+    kostenpositionen: [
+      { datum: d(2026, 5, 10), betragNetto: 10000 },
+      { datum: d(2026, 11, 20), betragNetto: 5000 },
+      { datum: d(2027, 2, 1), betragNetto: 7000 }, // nach Stichtag 2026
+    ],
+  });
+
+  it('zählt nur Belege bis zum Stichtag (Completed Contract: unfertige Leistungen)', () => {
+    const r = berechneProjektAbgrenzung(p, GJ2026, Abgrenzungsmethode.COMPLETED_CONTRACT)!;
+    expect(r.aufteilung.unfertigeLeistungen).toBe(15000);
+  });
+
+  it('ohne Kostenpositionen gilt weiterhin der Feldwert', () => {
+    const p2 = projekt({
+      startdatumGeplant: d(2026, 3, 1),
+      enddatumGeplant: d(2027, 6, 30),
+      istKostenStichtag: 12345,
+    });
+    const r = berechneProjektAbgrenzung(p2, GJ2026, Abgrenzungsmethode.COMPLETED_CONTRACT)!;
+    expect(r.aufteilung.unfertigeLeistungen).toBe(12345);
+  });
+});
+
 // --- Zusatz: vor dem GJ abgeschlossen -> nicht relevant -------------------
 describe('Projekt, das vor dem Geschäftsjahr endete, wird ausgeschlossen', () => {
   // Lief 2024–2025, betrachtet wird GJ 2026: gehört in eine frühere Periode.

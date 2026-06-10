@@ -82,5 +82,9 @@ export function projektZuBerechnung(p: Projekt): ProjektBerechnung {
       betragNetto: z.betragNetto,
       art: z.art,
     })),
+    kostenpositionen: (p.kostenpositionen ?? []).map((k) => ({
+      datum: parseISO(k.datum),
+      betragNetto: k.betragNetto,
+    })),
   };
 }

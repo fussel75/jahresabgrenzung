@@ -29,18 +29,17 @@ function mapStatus(p: ImportProjekt): string {
 }
 
 /**
- * Default-Enddatum, wenn HAPAK keines liefert: 31.12. des Folgejahres
- * vom Stichtag. So fällt das Projekt in den Abgrenzungsbedarf, ist aber
- * jederzeit in der App änderbar.
+ * Default-Enddatum für laufende Projekte ohne Schlussrechnung:
+ * 31.12. des Folgejahres (bezogen auf heute bzw. den späteren Projektstart).
+ * Das Projekt fällt damit in den Abgrenzungsbedarf und ist jederzeit änderbar.
  */
 function defaultEnde(stichtag: Date | null, startdatum: Date | null): Date {
-  if (stichtag) {
-    return new Date(stichtag.getFullYear() + 1, 11, 31);
-  }
-  if (startdatum) {
-    return new Date(startdatum.getFullYear() + 1, 11, 31);
-  }
-  return new Date(new Date().getFullYear() + 1, 11, 31);
+  const basisJahr = Math.max(
+    stichtag?.getFullYear() ?? 0,
+    startdatum?.getFullYear() ?? 0,
+    new Date().getFullYear(),
+  );
+  return new Date(basisJahr + 1, 11, 31);
 }
 
 export async function speichereImport(

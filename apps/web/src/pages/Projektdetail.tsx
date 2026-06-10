@@ -58,6 +58,15 @@ export function Projektdetail() {
   // (z.B. vor dem GJ abgeschlossen, Status Angebot/Storniert).
   const ausserhalbGj = vergleich !== null && ALLE_METHODEN.every((m) => !vergleich[m]);
 
+  // Ist-Kosten stichtagsgenau zum gewählten GJ (aus datierten Kostenpositionen;
+  // Fallback auf den pauschalen Feldwert, wenn keine Belege vorliegen).
+  const istKostenAnzeige =
+    gj && (projekt.kostenpositionen?.length ?? 0) > 0
+      ? projekt.kostenpositionen!
+          .filter((k) => parseISO(k.datum) <= parseISO(gj.ende))
+          .reduce((s, k) => s + k.betragNetto, 0)
+      : projekt.istKostenStichtag;
+
   const diagrammDaten = vergleich
     ? ALLE_METHODEN.map((m) => ({
         name: METHODE_KURZ[m],
@@ -102,8 +111,14 @@ export function Projektdetail() {
             />
             <Feld label="Ende (geplant)" wert={datum(projekt.enddatumGeplant)} />
             <Feld label="Ende (Ist)" wert={projekt.enddatumIst ? datum(projekt.enddatumIst) : '–'} />
-            <Feld label="Geplante Gesamtkosten" wert={euro(projekt.gesamtkostenGeplant)} />
-            <Feld label="Ist-Kosten (Stichtag)" wert={euro(projekt.istKostenStichtag)} />
+            <Feld
+              label="Gesamtkosten (kalkuliert)"
+              wert={`${euro(projekt.gesamtkostenGeplant)} — bei abgeschlossenen Projekten = tatsächliche`}
+            />
+            <Feld
+              label={gj ? `Ist-Kosten bis 31.12.${gj.jahr}` : 'Ist-Kosten'}
+              wert={euro(istKostenAnzeige)}
+            />
             <Feld label="Manueller Grad" wert={projekt.fertigstellungGradManuell != null ? prozent(projekt.fertigstellungGradManuell * 100) : '–'} />
             <Feld
               label="HAPAK-Anlage"
@@ -271,12 +286,18 @@ function StammdatenForm({ projekt, onGespeichert }: { projekt: Projekt; onGespei
           <GeldInput className={inp} value={Number(f.auftragssummeNetto)} onChange={(n) => setF({ ...f, auftragssummeNetto: n as never })} />
         </label>
         <label className="text-xs text-gray-500">
-          Geplante Gesamtkosten (€)
+          Gesamtkosten kalkuliert (€)
           <GeldInput className={inp} value={Number(f.gesamtkostenGeplant)} onChange={(n) => setF({ ...f, gesamtkostenGeplant: n as never })} />
+          <span className="mt-0.5 block text-[10px] text-gray-400">
+            Erwarteter Gesamtaufwand (Basis für Cost-to-Cost). Bei abgeschlossenen Projekten = tatsächliche Gesamtkosten.
+          </span>
         </label>
         <label className="text-xs text-gray-500">
-          Ist-Kosten (Stichtag, €)
+          Ist-Kosten gesamt (€)
           <GeldInput className={inp} value={Number(f.istKostenStichtag)} onChange={(n) => setF({ ...f, istKostenStichtag: n as never })} />
+          <span className="mt-0.5 block text-[10px] text-gray-400">
+            Nur Fallback — liegen Kostenpositionen (Belege) vor, rechnet die App stichtagsgenau aus ihnen.
+          </span>
         </label>
         <label className="text-xs text-gray-500">
           Projekt-Start

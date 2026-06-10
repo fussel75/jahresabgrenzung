@@ -32,6 +32,10 @@ export function toBerechnung(p: ProjektMitRelationen): ProjektBerechnung {
       betragNetto: dec(z.betragNetto),
       art: z.art as ZahlungsArt,
     })),
+    kostenpositionen: (p.kostenpositionen ?? []).map((k) => ({
+      datum: k.datum,
+      betragNetto: dec(k.betragNetto),
+    })),
   };
 }
 

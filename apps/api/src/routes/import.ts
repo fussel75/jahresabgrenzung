@@ -36,11 +36,13 @@ importRouter.post(
 
 // Übernahme: lädt frisch vom NAS (vertraut Beträgen aus dem Browser NICHT)
 // und speichert nur die per `projnames` ausgewählten Projekte idempotent.
+// WICHTIG: Es wird IMMER alles importiert (kein Stichtag-Limit) — die App
+// rechnet je Geschäftsjahr stichtagsgenau aus den datierten Belegen. Sonst
+// hinge der Datenbestand vom zufällig gewählten GJ beim Import-Klick ab.
 importRouter.post(
   '/hapak/uebernahme',
   asyncHandler(async (req, res) => {
     const abJahr = Number(req.body?.abJahr) || 2024;
-    const stichtag = req.body?.stichtag ? new Date(String(req.body.stichtag)) : null;
     const auswahl = new Set<string>(
       Array.isArray(req.body?.projnames) ? req.body.projnames.map(String) : [],
     );
@@ -48,13 +50,13 @@ importRouter.post(
       res.status(400).json({ fehler: 'Keine Projekte ausgewählt (projnames leer).' });
       return;
     }
-    const vorschau = await hapakImportVorschau(abJahr, stichtag);
+    const vorschau = await hapakImportVorschau(abJahr, null);
     if (!vorschau.ok) {
       res.status(502).json({ fehler: vorschau.fehler ?? 'NAS-Abruf fehlgeschlagen' });
       return;
     }
     const ausgewaehlt = vorschau.projekte.filter((p) => auswahl.has(p.projname));
-    const ergebnis = await speichereImport(ausgewaehlt, stichtag);
+    const ergebnis = await speichereImport(ausgewaehlt, null);
     res.status(ergebnis.ok ? 200 : 207).json(ergebnis);
   }),
 );
