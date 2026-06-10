@@ -120,7 +120,7 @@ export function GanttChart({ projekte, stichtag, heute = new Date(), onProjektCl
               );
             })}
 
-          {/* Jahreswechsel-Linie (rot) */}
+          {/* Jahreswechsel-Linie (rot) mit lesbarem Label-Hintergrund */}
           <line
             x1={jahreswechselX}
             y1={0}
@@ -129,7 +129,15 @@ export function GanttChart({ projekte, stichtag, heute = new Date(), onProjektCl
             stroke="#dc2626"
             strokeWidth={2}
           />
-          <text x={jahreswechselX + 4} y={AXIS_H - 8} fontSize={11} fontWeight={700} fill="#dc2626">
+          <rect
+            x={jahreswechselX + 3}
+            y={AXIS_H - 18}
+            width={84}
+            height={14}
+            rx={2}
+            fill="#dc2626"
+          />
+          <text x={jahreswechselX + 6} y={AXIS_H - 7} fontSize={11} fontWeight={700} fill="#fff">
             Jahreswechsel
           </text>
 
