@@ -56,9 +56,9 @@ export function hapakConfigAusEnv(): { config?: HapakConfig; fehlend: string[] }
     ersterWert('HAPAK_BASIS_PFAD', 'NAS_BASIS_PFAD') || '/HapakV22/FB ZuB';
 
   const fehlend: string[] = [];
-  if (!hostRoh) fehlend.push('NAS_HOST');
-  if (!user) fehlend.push('NAS_USER');
-  if (!pass) fehlend.push('NAS_PASS');
+  if (!hostRoh) fehlend.push('HAPAK_NAS_ID');
+  if (!user) fehlend.push('HAPAK_NAS_USER');
+  if (!pass) fehlend.push('HAPAK_NAS_PASS');
   if (fehlend.length) return { fehlend };
 
   return {
