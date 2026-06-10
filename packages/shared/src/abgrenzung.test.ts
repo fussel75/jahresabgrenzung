@@ -226,6 +226,30 @@ describe('Testfall 5: Projekt ohne Ist-Kosten (Cost-to-Cost, Division durch 0)',
   });
 });
 
+// --- Zusatz: vor dem GJ abgeschlossen -> nicht relevant -------------------
+describe('Projekt, das vor dem Geschäftsjahr endete, wird ausgeschlossen', () => {
+  // Lief 2024–2025, betrachtet wird GJ 2026: gehört in eine frühere Periode.
+  const p = projekt({
+    startdatumGeplant: d(2024, 1, 10),
+    enddatumGeplant: d(2025, 4, 2),
+    enddatumIst: d(2025, 4, 2),
+    status: ProjektStatus.ABGESCHLOSSEN,
+  });
+
+  it('liefert null für ein späteres GJ', () => {
+    expect(
+      berechneProjektAbgrenzung(p, GJ2026, Abgrenzungsmethode.COMPLETED_CONTRACT),
+    ).toBeNull();
+  });
+
+  it('hat im passenden GJ (2024) aber Abgrenzungsbedarf', () => {
+    const gj2024 = { jahr: 2024, beginn: d(2024, 1, 1), ende: d(2024, 12, 31) };
+    const r = berechneProjektAbgrenzung(p, gj2024, Abgrenzungsmethode.COMPLETED_CONTRACT);
+    expect(r).not.toBeNull();
+    expect(r!.abgrenzungsbedarf).toBe(true);
+  });
+});
+
 // --- Zusatz: Angebot wird ausgeschlossen ---------------------------------
 describe('Status ANGEBOT (noch nicht beauftragt) wird ausgeschlossen', () => {
   const p = projekt({

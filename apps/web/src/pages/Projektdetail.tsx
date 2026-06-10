@@ -54,6 +54,9 @@ export function Projektdetail() {
 
   const { start, ende } = effektiverZeitraum(projekt);
   const bedarf = gj ? istAbzugrenzen(projekt, parseISO(gj.ende)) : false;
+  // Alle Methoden null => Projekt ist für das gewählte GJ nicht relevant
+  // (z.B. vor dem GJ abgeschlossen, Status Angebot/Storniert).
+  const ausserhalbGj = vergleich !== null && ALLE_METHODEN.every((m) => !vergleich[m]);
 
   const diagrammDaten = vergleich
     ? ALLE_METHODEN.map((m) => ({
@@ -133,7 +136,18 @@ export function Projektdetail() {
       )}
 
       {/* Abgrenzungs-Vergleich aller 4 Methoden */}
-      {vergleich && (
+      {vergleich && ausserhalbGj && (
+        <Card>
+          <h2 className="mb-3 font-semibold text-anthrazit">Abgrenzung — Methodenvergleich {gj?.jahr}</h2>
+          <LeerHinweis>
+            Dieses Projekt ist für das Geschäftsjahr {gj?.jahr} nicht relevant — es wurde
+            vor dem {gj?.jahr ? `01.01.${gj.jahr}` : 'Geschäftsjahresbeginn'} abgeschlossen
+            (oder hat den Status Angebot/Storniert). Wähle oben das Geschäftsjahr, über dessen
+            Jahreswechsel das Projekt lief (hier: {datum(ende)} → davor liegendes Jahr).
+          </LeerHinweis>
+        </Card>
+      )}
+      {vergleich && !ausserhalbGj && (
         <Card>
           <h2 className="mb-3 font-semibold text-anthrazit">Abgrenzung — Methodenvergleich {gj?.jahr}</h2>
           <HgbWarnung methode={methode} />

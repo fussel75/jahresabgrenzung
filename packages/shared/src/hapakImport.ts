@@ -1,6 +1,6 @@
 import { round2 } from './abgrenzung.js';
 import { mapHapakDokumentTyp } from './hapak.js';
-import type { ZahlungsArt } from './types.js';
+import type { KostenArt, ZahlungsArt } from './types.js';
 
 /**
  * Reine Mapping-Logik HAPAK -> Import-Projekte (ohne Datei-/NAS-Zugriff,
@@ -41,6 +41,8 @@ export interface HapakFibuRow {
   zahlung: number;
   offen: number;
   belegdat: Date | null;
+  /** Gegenkonto (KONTO_G): bei Eingangsrechnungen das Aufwandskonto (SKR04). */
+  kontoG: string;
 }
 
 export interface HapakAdrRow {
@@ -70,6 +72,24 @@ export interface ImportKostenposition {
   rechnungsNr: string;
   lieferant: string; // ADR_SUCH der Eingangsrechnung
   beschreibung: string;
+  /** Aus dem Aufwandskonto abgeleitete Kostenart (SKR04-Heuristik). */
+  art: KostenArt;
+  konto: string;
+}
+
+/**
+ * Kostenart aus dem SKR04-Aufwandskonto der Eingangsrechnung ableiten:
+ *   59xx = Fremdleistungen/Fremdarbeiten -> FREMDLEISTUNG
+ *   5xxx (sonst, v.a. 54xx Wareneingang) -> MATERIAL
+ *   alles andere                          -> SONSTIGES
+ * (Pragmatische Heuristik; bei Bedarf später über Einstellungen konfigurierbar.)
+ */
+export function kontoZuKostenart(konto: string): KostenArt {
+  const k = konto.trim();
+  if (!k) return 'SONSTIGES';
+  if (k.startsWith('59')) return 'FREMDLEISTUNG';
+  if (k.startsWith('5')) return 'MATERIAL';
+  return 'SONSTIGES';
 }
 
 export interface ImportProjekt {
@@ -220,6 +240,8 @@ export function mappeHapakImport(
         rechnungsNr: f.rnr.trim(),
         lieferant: f.adrSuch.trim(),
         beschreibung: f.betreff.trim(),
+        art: kontoZuKostenart(f.kontoG),
+        konto: f.kontoG.trim(),
       }));
 
     const zahlungen: ImportZahlung[] = [];

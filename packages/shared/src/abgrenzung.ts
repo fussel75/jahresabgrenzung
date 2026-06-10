@@ -212,6 +212,10 @@ export function berechneProjektAbgrenzung(
   // die Abgrenzung — kein Vertrag, kein Aufwand, kein Ertrag.
   if (p.status === ProjektStatus.STORNIERT || p.status === ProjektStatus.ANGEBOT) return null;
 
+  // Vor dem Geschäftsjahr abgeschlossen: gehört in eine frühere Periode und
+  // darf weder Ertrag noch Aufwand in dieses GJ einbringen.
+  if (effektivesEnde(p) < gj.beginn) return null;
+
   const start = effektiverStart(p);
   const ende = effektivesEnde(p);
   const abgrenzungsbedarf = hatAbgrenzungsbedarf(p, gj);

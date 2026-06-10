@@ -135,14 +135,18 @@ export async function speichereImport(
         .filter((k) => k.datum != null)
         .map((k) => {
           const text = [k.lieferant, k.beschreibung].filter(Boolean).join(' — ');
+          const zusatz = [k.rechnungsNr ? `Rg. ${k.rechnungsNr}` : '', k.konto ? `Kto ${k.konto}` : '']
+            .filter(Boolean)
+            .join(', ');
           const beschreibung = text
-            ? `${text}${k.rechnungsNr ? ` (Rg. ${k.rechnungsNr})` : ''}`
-            : k.rechnungsNr || null;
+            ? `${text}${zusatz ? ` (${zusatz})` : ''}`
+            : zusatz || null;
           return {
             projektId,
             datum: k.datum as Date,
             betragNetto: k.betragNetto,
-            art: 'FREMDLEISTUNG',
+            // Kostenart aus dem HAPAK-Aufwandskonto (54xx Material, 59xx Fremdleistung).
+            art: k.art,
             beschreibung,
           };
         });

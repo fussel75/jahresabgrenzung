@@ -86,6 +86,7 @@ export async function hapakImportVorschau(
       art: S(r.ART), typ: S(r.TYP), rnr: S(r.RNR), ktr: S(r.KTR), adrNr: S(r.ADR_NR),
       adrSuch: S(r.ADR_SUCH), betreff: S(r.BETREFF), netto: N(r.NETTO),
       zahlung: N(r.ZAHLUNG), offen: N(r.OFFEN), belegdat: D(r.BELEGDAT),
+      kontoG: S(r.KONTO_G),
     }));
     const adressen: HapakAdrRow[] = adrRoh.map((r) => ({
       kuNr: S(r.KU_NR), name: S(r.NAME), name2: S(r.NAME2), strasse: S(r.STRASSE),

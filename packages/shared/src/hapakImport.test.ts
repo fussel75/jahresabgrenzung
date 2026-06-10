@@ -18,7 +18,7 @@ function dok(over: Partial<HapakDokRow>): HapakDokRow {
 function fib(over: Partial<HapakFibuRow>): HapakFibuRow {
   return {
     art: 'RA', typ: 'HR', rnr: '', ktr: '', adrNr: '', adrSuch: '', betreff: '',
-    netto: 0, zahlung: 0, offen: 0, belegdat: null, ...over,
+    netto: 0, zahlung: 0, offen: 0, belegdat: null, kontoG: '', ...over,
   };
 }
 const adr: HapakAdrRow[] = [
@@ -110,6 +110,19 @@ describe('mappeHapakImport', () => {
     const r = mappeHapakImport(dokumente, fibu, adr, { abJahr: 2024 });
     expect(r[0].auftragssummeNetto).toBe(8000);
     expect(r[0].auftragssummeQuelle).toBe('Ausgangsrechnungen');
+  });
+
+  it('Kostenart wird aus dem Aufwandskonto abgeleitet (SKR04)', () => {
+    const fibu = [
+      fib({ art: 'RE', typ: 'HR', ktr: 'PX1', rnr: 'E1', netto: 1000, kontoG: '5400', belegdat: d('2026-02-01') }),
+      fib({ art: 'RE', typ: 'HR', ktr: 'PX1', rnr: 'E2', netto: 2000, kontoG: '5900', belegdat: d('2026-03-01') }),
+      fib({ art: 'RE', typ: 'HR', ktr: 'PX1', rnr: 'E3', netto: 300, kontoG: '6815', belegdat: d('2026-04-01') }),
+    ];
+    const r = mappeHapakImport([], fibu, adr, { abJahr: 2024 });
+    const arten = Object.fromEntries(r[0].kostenpositionen.map((k) => [k.rechnungsNr, k.art]));
+    expect(arten.E1).toBe('MATERIAL');
+    expect(arten.E2).toBe('FREMDLEISTUNG');
+    expect(arten.E3).toBe('SONSTIGES');
   });
 
   it('Gutschrift (HG): STORNO-Zahlung negativ und mindert die Auftragssumme', () => {
