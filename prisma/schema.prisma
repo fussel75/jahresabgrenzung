@@ -38,6 +38,8 @@ model Projekt {
   status                    String // ProjektStatus: ANGEBOT | BEAUFTRAGT | LAUFEND | ABGESCHLOSSEN | STORNIERT
   gewerk                    String // Gewerk: ZIMMEREI | DACHDECKEREI | SHK | GEMISCHT
   notizen                   String?
+  // HAPAK-Quelle (intern), damit erneuter Import idempotent ist.
+  hapakProjname             String?          @unique
   zahlungen                 Zahlung[]
   kostenpositionen          Kostenposition[]
   erstelltAm                DateTime         @default(now())

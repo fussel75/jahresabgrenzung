@@ -1,5 +1,10 @@
 import { useState } from 'react';
-import { api, type HapakTestErgebnis, type ImportProjekt } from '../api';
+import {
+  api,
+  type HapakTestErgebnis,
+  type ImportProjekt,
+  type HapakUebernahmeErgebnis,
+} from '../api';
 import { euro, datum } from '../format';
 import { useAppState } from '../state';
 import { Card, LeerHinweis } from '../components/ui';
@@ -122,6 +127,11 @@ function HapakKarte() {
   const [vorProjekte, setVorProjekte] = useState<ImportProjekt[] | null>(null);
   const [vorLaedt, setVorLaedt] = useState(false);
   const [vorFehler, setVorFehler] = useState<string | null>(null);
+  const [auswahl, setAuswahl] = useState<Set<string>>(new Set());
+
+  const [uebLaedt, setUebLaedt] = useState(false);
+  const [uebErgebnis, setUebErgebnis] = useState<HapakUebernahmeErgebnis | null>(null);
+  const [uebFehler, setUebFehler] = useState<string | null>(null);
 
   async function testen() {
     setLaedt(true);
@@ -140,13 +150,47 @@ function HapakKarte() {
     setVorLaedt(true);
     setVorFehler(null);
     setVorProjekte(null);
+    setUebErgebnis(null);
+    setUebFehler(null);
     try {
       const r = await api.hapakVorschau(2024, gj?.ende ?? null);
       setVorProjekte(r.projekte);
+      // Default-Auswahl: alle Nicht-Sammelprojekte angehakt.
+      setAuswahl(new Set(r.projekte.filter((p) => !p.sammelprojekt).map((p) => p.projname)));
     } catch (e) {
       setVorFehler((e as Error).message);
     } finally {
       setVorLaedt(false);
+    }
+  }
+
+  function toggleAuswahl(projname: string) {
+    setAuswahl((alt) => {
+      const neu = new Set(alt);
+      if (neu.has(projname)) neu.delete(projname);
+      else neu.add(projname);
+      return neu;
+    });
+  }
+  function alleSetzen(an: boolean) {
+    if (!vorProjekte) return;
+    setAuswahl(an ? new Set(vorProjekte.map((p) => p.projname)) : new Set());
+  }
+
+  async function uebernehmen() {
+    if (auswahl.size === 0) return;
+    if (!confirm(`${auswahl.size} Projekt(e) in die App übernehmen?\n\nBestehende Projekte (gleicher HAPAK-Schlüssel) werden aktualisiert; Zahlungen werden frisch geschrieben.`))
+      return;
+    setUebLaedt(true);
+    setUebFehler(null);
+    setUebErgebnis(null);
+    try {
+      const r = await api.hapakUebernehmen(2024, gj?.ende ?? null, [...auswahl]);
+      setUebErgebnis(r);
+    } catch (e) {
+      setUebFehler((e as Error).message);
+    } finally {
+      setUebLaedt(false);
     }
   }
 
@@ -225,20 +269,57 @@ function HapakKarte() {
 
       {vorProjekte && (
         <div className="mt-5">
-          <p className="mb-2 text-sm text-gray-600">
-            <strong>{vorProjekte.length} Projekte</strong> aus HAPAK (ab 2024
-            {gj ? `, Stichtag ${datum(gj.ende)}` : ''}) — <em>Vorschau, noch nichts gespeichert.</em>
-          </p>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm text-gray-600">
+              <strong>{vorProjekte.length} Projekte</strong> aus HAPAK (ab 2024
+              {gj ? `, Stichtag ${datum(gj.ende)}` : ''}) —{' '}
+              <strong>{auswahl.size}</strong> ausgewählt.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => alleSetzen(true)}
+                className="rounded border border-gray-300 bg-white px-2 py-1 text-xs"
+              >
+                Alle
+              </button>
+              <button
+                onClick={() => alleSetzen(false)}
+                className="rounded border border-gray-300 bg-white px-2 py-1 text-xs"
+              >
+                Keine
+              </button>
+              <button
+                onClick={uebernehmen}
+                disabled={uebLaedt || auswahl.size === 0}
+                className="rounded-lg bg-emerald-700 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
+              >
+                {uebLaedt ? 'Übernehme …' : `${auswahl.size} Projekt(e) in die App übernehmen`}
+              </button>
+            </div>
+          </div>
+
+          {uebFehler && <p className="mb-2 text-sm text-red-600">Fehler: {uebFehler}</p>}
+          {uebErgebnis && (
+            <div className="mb-3 rounded border border-emerald-200 bg-emerald-50 p-2 text-sm text-emerald-900">
+              <strong>{uebErgebnis.uebernommen} Projekt(e)</strong> gespeichert
+              ({uebErgebnis.details.filter((d) => d.aktion === 'neu').length} neu,{' '}
+              {uebErgebnis.details.filter((d) => d.aktion === 'aktualisiert').length} aktualisiert
+              {uebErgebnis.fehler > 0 && `, ${uebErgebnis.fehler} mit Fehler`}). Schau in
+              {' '}<a href="/projekte" className="underline">Projekte</a> oder ins{' '}
+              <a href="/" className="underline">Dashboard</a>.
+            </div>
+          )}
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead className="border-b bg-gray-50 text-left text-gray-500">
                 <tr>
+                  <th className="p-2 w-8"></th>
                   <th className="p-2">Projektnr.</th>
                   <th className="p-2">Bezeichnung</th>
                   <th className="p-2">Kunde</th>
                   <th className="p-2 text-right">Auftragssumme</th>
                   <th className="p-2 text-right">istKosten</th>
-                  <th className="p-2 text-right">AR/ER</th>
+                  <th className="p-2 text-right" title="Anzahl Ausgangsrechnungen / Eingangsrechnungen">AR/ER</th>
                   <th className="p-2">Zeitraum</th>
                   <th className="p-2">Status</th>
                 </tr>
@@ -246,6 +327,13 @@ function HapakKarte() {
               <tbody>
                 {vorProjekte.map((p) => (
                   <tr key={p.projname} className="border-b border-gray-100">
+                    <td className="p-2">
+                      <input
+                        type="checkbox"
+                        checked={auswahl.has(p.projname)}
+                        onChange={() => toggleAuswahl(p.projname)}
+                      />
+                    </td>
                     <td className="p-2 font-mono">
                       {p.projektnummer}
                       <span className="block text-[10px] text-gray-400">{p.projname}</span>
@@ -279,7 +367,9 @@ function HapakKarte() {
             </table>
           </div>
           <p className="mt-2 text-xs text-gray-400">
-            Übernahme in die App (Speichern) baue ich als nächsten Schritt — erst prüfst du hier die Vorschau.
+            Sammelprojekte sind standardmäßig nicht angehakt — sie verfälschen die Abgrenzung
+            (Bündel vieler Kleinjobs). Beim erneuten Import werden Projekte mit gleichem
+            HAPAK-Schlüssel aktualisiert.
           </p>
         </div>
       )}

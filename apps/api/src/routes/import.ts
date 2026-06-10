@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { asyncHandler } from '../helpers.js';
 import { hapakVerbindungstest } from '../hapak/preview.js';
 import { hapakImportVorschau } from '../hapak/import.js';
+import { speichereImport } from '../hapak/save.js';
 
 /**
  * Import-Schnittstelle.
@@ -30,5 +31,30 @@ importRouter.post(
     const stichtag = req.body?.stichtag ? new Date(String(req.body.stichtag)) : null;
     const ergebnis = await hapakImportVorschau(abJahr, stichtag);
     res.status(ergebnis.ok ? 200 : 502).json(ergebnis);
+  }),
+);
+
+// Übernahme: lädt frisch vom NAS (vertraut Beträgen aus dem Browser NICHT)
+// und speichert nur die per `projnames` ausgewählten Projekte idempotent.
+importRouter.post(
+  '/hapak/uebernahme',
+  asyncHandler(async (req, res) => {
+    const abJahr = Number(req.body?.abJahr) || 2024;
+    const stichtag = req.body?.stichtag ? new Date(String(req.body.stichtag)) : null;
+    const auswahl = new Set<string>(
+      Array.isArray(req.body?.projnames) ? req.body.projnames.map(String) : [],
+    );
+    if (auswahl.size === 0) {
+      res.status(400).json({ fehler: 'Keine Projekte ausgewählt (projnames leer).' });
+      return;
+    }
+    const vorschau = await hapakImportVorschau(abJahr, stichtag);
+    if (!vorschau.ok) {
+      res.status(502).json({ fehler: vorschau.fehler ?? 'NAS-Abruf fehlgeschlagen' });
+      return;
+    }
+    const ausgewaehlt = vorschau.projekte.filter((p) => auswahl.has(p.projname));
+    const ergebnis = await speichereImport(ausgewaehlt, stichtag);
+    res.status(ergebnis.ok ? 200 : 207).json(ergebnis);
   }),
 );

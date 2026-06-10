@@ -109,6 +109,18 @@ export interface HapakVorschauErgebnis {
   projekte: ImportProjekt[];
 }
 
+export interface HapakUebernahmeErgebnis {
+  ok: boolean;
+  uebernommen: number;
+  fehler: number;
+  details: Array<{
+    projname: string;
+    projektnummer: string;
+    aktion: 'neu' | 'aktualisiert' | 'fehler';
+    fehler?: string;
+  }>;
+}
+
 // --- Fetch-Wrapper ---
 
 export class ApiError extends Error {
@@ -196,6 +208,22 @@ export const api = {
     const text = await res.text();
     const daten = text ? JSON.parse(text) : null;
     if (daten && Array.isArray(daten.projekte)) return daten as HapakVorschauErgebnis;
+    throw new ApiError(res.status, daten?.fehler ?? res.statusText);
+  },
+
+  hapakUebernehmen: async (
+    abJahr: number,
+    stichtag: string | null,
+    projnames: string[],
+  ): Promise<HapakUebernahmeErgebnis> => {
+    const res = await fetch('/api/import/hapak/uebernahme', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ abJahr, stichtag, projnames }),
+    });
+    const text = await res.text();
+    const daten = text ? JSON.parse(text) : null;
+    if (daten && Array.isArray(daten.details)) return daten as HapakUebernahmeErgebnis;
     throw new ApiError(res.status, daten?.fehler ?? res.statusText);
   },
 };
