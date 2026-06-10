@@ -202,7 +202,9 @@ export function berechneProjektAbgrenzung(
   gj: GeschaeftsjahrBerechnung,
   methode: Abgrenzungsmethode,
 ): ProjektAbgrenzung | null {
-  if (p.status === ProjektStatus.STORNIERT) return null;
+  // Stornierte und reine Angebote (noch nicht beauftragt) gehören nicht in
+  // die Abgrenzung — kein Vertrag, kein Aufwand, kein Ertrag.
+  if (p.status === ProjektStatus.STORNIERT || p.status === ProjektStatus.ANGEBOT) return null;
 
   const start = effektiverStart(p);
   const ende = effektivesEnde(p);

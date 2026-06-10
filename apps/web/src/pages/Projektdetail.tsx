@@ -7,7 +7,14 @@ import { api, type Projekt } from '../api';
 import { useAppState } from '../state';
 import { effektiverZeitraum, projektZuBerechnung, istAbzugrenzen } from '../hooks';
 import { euro, datum, prozent } from '../format';
-import { METHODE_KURZ, METHODE_HGB_WARNUNG, ZAHLUNGSART_LABEL, KOSTENART_LABEL, GEWERK_LABEL } from '../labels';
+import {
+  METHODE_KURZ,
+  METHODE_HGB_WARNUNG,
+  ZAHLUNGSART_LABEL,
+  KOSTENART_LABEL,
+  GEWERK_LABEL,
+  STATUS_LABEL,
+} from '../labels';
 import { Card, StatusBadge, AbgrenzungsBadge, HgbWarnung, Spinner, LeerHinweis } from '../components/ui';
 import { GanttChart } from '../components/GanttChart';
 
@@ -242,7 +249,9 @@ function StammdatenForm({ projekt, onGespeichert }: { projekt: Projekt; onGespei
         <label className="text-xs text-gray-500">Manueller Grad (0–1)<input type="number" step="0.05" min="0" max="1" className={inp} value={f.fertigstellungGradManuell} onChange={(e) => setF({ ...f, fertigstellungGradManuell: e.target.value as never })} /></label>
         <label className="text-xs text-gray-500">Status
           <select className={inp} value={f.status} onChange={(e) => setF({ ...f, status: e.target.value as never })}>
-            {['ANGEBOT', 'BEAUFTRAGT', 'LAUFEND', 'ABGESCHLOSSEN', 'STORNIERT'].map((s) => <option key={s} value={s}>{s}</option>)}
+            {(['ANGEBOT', 'BEAUFTRAGT', 'LAUFEND', 'ABGESCHLOSSEN', 'STORNIERT'] as const).map((s) => (
+              <option key={s} value={s}>{STATUS_LABEL[s]}</option>
+            ))}
           </select>
         </label>
         <label className="col-span-full text-xs text-gray-500">Notizen<textarea className={inp} value={f.notizen} onChange={(e) => setF({ ...f, notizen: e.target.value })} /></label>

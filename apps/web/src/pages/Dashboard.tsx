@@ -30,7 +30,10 @@ export function Dashboard() {
   const ganttProjekte: GanttProjekt[] = useMemo(() => {
     if (!ergebnis) return [];
     return projekte
-      .filter((p) => p.status !== 'STORNIERT')
+      .filter((p) => p.status !== 'STORNIERT' && p.status !== 'ANGEBOT')
+      // Inaktiv: weder Ist-Kosten noch Zahlungen -> ausblenden,
+      // bis tatsächlich etwas passiert ist.
+      .filter((p) => p.istKostenStichtag > 0 || (p.zahlungen?.length ?? 0) > 0)
       .map((p) => {
         const a = ergebnis.projekte.find((e) => e.projektId === p.id);
         const { start, ende } = effektiverZeitraum(p);

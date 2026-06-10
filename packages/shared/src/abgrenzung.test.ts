@@ -226,6 +226,20 @@ describe('Testfall 5: Projekt ohne Ist-Kosten (Cost-to-Cost, Division durch 0)',
   });
 });
 
+// --- Zusatz: Angebot wird ausgeschlossen ---------------------------------
+describe('Status ANGEBOT (noch nicht beauftragt) wird ausgeschlossen', () => {
+  const p = projekt({
+    startdatumGeplant: d(2026, 11, 1),
+    enddatumGeplant: d(2027, 2, 28),
+    status: ProjektStatus.ANGEBOT,
+  });
+  it('liefert null', () => {
+    expect(
+      berechneProjektAbgrenzung(p, GJ2026, Abgrenzungsmethode.COMPLETED_CONTRACT),
+    ).toBeNull();
+  });
+});
+
 // --- Testfall 6 ----------------------------------------------------------
 describe('Testfall 6: Projekt mit Status STORNIERT (wird ausgeschlossen)', () => {
   const p = projekt({
