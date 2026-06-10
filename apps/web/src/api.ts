@@ -85,6 +85,7 @@ export interface HapakTestErgebnis {
 
 export interface ImportProjekt {
   projektnummer: string;
+  projname: string;
   bezeichnung: string;
   kunde: string;
   kundenadresse?: string;

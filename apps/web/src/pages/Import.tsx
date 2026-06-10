@@ -245,8 +245,11 @@ function HapakKarte() {
               </thead>
               <tbody>
                 {vorProjekte.map((p) => (
-                  <tr key={p.projektnummer} className="border-b border-gray-100">
-                    <td className="p-2 font-mono">{p.projektnummer}</td>
+                  <tr key={p.projname} className="border-b border-gray-100">
+                    <td className="p-2 font-mono">
+                      {p.projektnummer}
+                      <span className="block text-[10px] text-gray-400">{p.projname}</span>
+                    </td>
                     <td className="p-2">
                       {p.bezeichnung}
                       {p.sammelprojekt && (

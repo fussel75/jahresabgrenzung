@@ -65,7 +65,8 @@ export interface ImportZahlung {
 }
 
 export interface ImportProjekt {
-  projektnummer: string; // PROJNAME
+  projektnummer: string; // Anzeige-Nummer JJ-NNNNN (wie in HAPAK sichtbar)
+  projname: string; // interner HAPAK-Schlüssel (PROJNAME), z.B. PZZ25000003
   bezeichnung: string;
   kunde: string;
   kundenadresse?: string;
@@ -88,6 +89,20 @@ export interface MappingOptionen {
 
 function jahr(d: Date | null): number | null {
   return d instanceof Date ? d.getFullYear() : null;
+}
+
+/**
+ * Rekonstruiert die in HAPAK sichtbare Anzeige-Nummer JJ-NNNNN aus dem
+ * internen PROJNAME und dem Projektjahr. HAPAK speichert sie nicht direkt,
+ * leitet sie aber so ab: Jahr aus dem Projektdatum, laufende Nummer aus den
+ * Ziffern des PROJNAME (z.B. PZZ25000003 + 2025 -> 25-00003, PY00002 + 2024 -> 24-00002).
+ */
+export function anzeigeNummer(projname: string, datum: Date | null): string {
+  const ziffern = (projname.match(/\d+/g) ?? []).join('');
+  const seq = ziffern ? Number(ziffern) % 100000 : 0;
+  const j = datum instanceof Date ? datum.getFullYear() % 100 : null;
+  if (j == null) return projname;
+  return `${String(j).padStart(2, '0')}-${String(seq).padStart(5, '0')}`;
 }
 
 function hapakTypZuZahlungsart(typundnr: string): ZahlungsArt {
@@ -156,11 +171,20 @@ export function mappeHapakImport(
 
     // Projektkopf (NAME == PROJNAME) für Bezeichnung/Kunde.
     const kopf = dks.find((d) => d.name.trim() === proj) ?? dks[0];
-    const kundeNr = (kopf?.kunde || fbs[0]?.adrNr || '').trim();
+    const kundeNr = (
+      kopf?.kunde ||
+      dks.find((d) => d.kunde.trim())?.kunde ||
+      fbs.find((f) => f.adrNr.trim())?.adrNr ||
+      ''
+    ).trim();
     const adr = adrByNr.get(kundeNr);
-    const kundeName = adr
-      ? [adr.name, adr.name2].filter(Boolean).join(' ').trim()
-      : (kopf?.kundesuch || fbs[0]?.adrSuch || '').trim();
+    const kundeSuch = (
+      kopf?.kundesuch ||
+      dks.find((d) => d.kundesuch.trim())?.kundesuch ||
+      fbs.find((f) => f.adrSuch.trim())?.adrSuch ||
+      ''
+    ).trim();
+    const kundeName = adr ? [adr.name, adr.name2].filter(Boolean).join(' ').trim() : kundeSuch;
     const kundenadresse = adr
       ? [adr.strasse, [adr.plz, adr.ort].filter(Boolean).join(' ')].filter(Boolean).join(', ')
       : undefined;
@@ -226,7 +250,8 @@ export function mappeHapakImport(
 
     const bezeichnung = (kopf?.betreff || fbs[0]?.betreff || proj).trim();
     ergebnis.push({
-      projektnummer: proj,
+      projektnummer: anzeigeNummer(proj, kopf?.datum ?? startdatum),
+      projname: proj,
       bezeichnung,
       sammelprojekt: /kleinprojekt/i.test(bezeichnung),
       kunde: kundeName || '(unbekannt)',

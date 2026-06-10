@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   mappeHapakImport,
+  anzeigeNummer,
   type HapakDokRow,
   type HapakFibuRow,
   type HapakAdrRow,
@@ -37,9 +38,17 @@ describe('mappeHapakImport', () => {
     ];
     const r = mappeHapakImport(dokumente, fibu, adr, { abJahr: 2024 });
     expect(r).toHaveLength(1);
-    expect(r[0].projektnummer).toBe('PX1');
+    expect(r[0].projname).toBe('PX1');
+    expect(r[0].projektnummer).toBe('24-00001'); // Anzeige-Nummer
     expect(r[0].kunde).toBe('COBET GmbH');
     expect(r[0].bezeichnung).toBe('Neubau MFH');
+  });
+
+  it('anzeigeNummer rekonstruiert JJ-NNNNN aus PROJNAME + Jahr', () => {
+    expect(anzeigeNummer('PZZ25000003', d('2025-02-12'))).toBe('25-00003');
+    expect(anzeigeNummer('PY00002', d('2024-04-02'))).toBe('24-00002');
+    expect(anzeigeNummer('PX00006', d('2023-10-17'))).toBe('23-00006');
+    expect(anzeigeNummer('PV00003', d('2021-01-01'))).toBe('21-00003');
   });
 
   it('istKosten = Summe Eingangsrechnungen (RE/HR), Stichtag begrenzt', () => {
