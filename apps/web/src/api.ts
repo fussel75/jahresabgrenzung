@@ -38,6 +38,7 @@ export interface Projekt {
   enddatumGeplant: string;
   startdatumIst?: string | null;
   enddatumIst?: string | null;
+  projektStartManuell?: string | null;
   auftragssummeNetto: number;
   gesamtkostenGeplant: number;
   istKostenStichtag: number;

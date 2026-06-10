@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { parseISO } from 'date-fns';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { useAppState } from '../state';
-import { useAbgrenzung, effektiverZeitraum } from '../hooks';
+import { useAbgrenzung, effektiverZeitraum, projektGestartet } from '../hooks';
 import { euro } from '../format';
 import { METHODE_LABEL } from '../labels';
 import { Card, KpiCard, HgbWarnung, Spinner, LeerHinweis } from '../components/ui';
@@ -31,9 +31,9 @@ export function Dashboard() {
     if (!ergebnis) return [];
     return projekte
       .filter((p) => p.status !== 'STORNIERT' && p.status !== 'ANGEBOT')
-      // Inaktiv: weder Ist-Kosten noch Zahlungen -> ausblenden,
-      // bis tatsächlich etwas passiert ist.
-      .filter((p) => p.istKostenStichtag > 0 || (p.zahlungen?.length ?? 0) > 0)
+      // "Noch nicht gestartet" ausblenden: kein Projekt-Start gesetzt und
+      // keine einzige Ausgangsrechnung -> faktisch nichts passiert.
+      .filter(projektGestartet)
       .map((p) => {
         const a = ergebnis.projekte.find((e) => e.projektId === p.id);
         const { start, ende } = effektiverZeitraum(p);

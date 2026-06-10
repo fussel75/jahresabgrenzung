@@ -60,6 +60,10 @@ export async function speichereImport(
 
       const startdatumGeplant = p.startdatum ?? new Date();
       const enddatumGeplant = p.enddatum ?? defaultEnde(stichtag, p.startdatum);
+      // Manueller Projekt-Start: nie überschreiben; nur beim ERSTEN Import
+      // mit dem geschätzten Wert (Datum erste Ausgangsrechnung) belegen.
+      const projektStartManuell =
+        vorhanden?.projektStartManuell ?? p.projektStartGeschaetzt ?? null;
 
       const daten = {
         projektnummer: p.projektnummer,
@@ -75,6 +79,7 @@ export async function speichereImport(
         status: mapStatus(p),
         gewerk: 'GEMISCHT' as const,
         hapakProjname: p.projname,
+        projektStartManuell,
         notizen: `HAPAK-Import. Auftragssumme aus: ${p.auftragssummeQuelle}.`,
       };
 
@@ -94,6 +99,7 @@ export async function speichereImport(
             enddatumIst: daten.enddatumIst,
             auftragssummeNetto: daten.auftragssummeNetto,
             istKostenStichtag: daten.istKostenStichtag,
+            // projektStartManuell wird NICHT überschrieben (bleibt was es ist).
           },
         });
         // HAPAK-Sync: Zahlungen + Kostenpositionen wegräumen und neu schreiben.

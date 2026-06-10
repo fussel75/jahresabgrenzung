@@ -42,6 +42,8 @@ export interface ProjektBerechnung {
   enddatumGeplant: Date;
   startdatumIst?: Date | null;
   enddatumIst?: Date | null;
+  /** Manuell gepflegter "Projekt-Start" (Baubeginn). Hat Vorrang vor HAPAK-Anlage. */
+  projektStartManuell?: Date | null;
   auftragssummeNetto: number;
   gesamtkostenGeplant: number;
   istKostenStichtag: number;
@@ -114,9 +116,13 @@ export function differenzInTagen(von: Date, bis: Date): number {
   return differenceInCalendarDays(bis, von) + 1;
 }
 
-/** Maßgeblicher Start: Ist vor Plan. */
+/**
+ * Maßgeblicher Start (Priorität): manueller Projekt-Start -> Ist -> Plan.
+ * `startdatumGeplant` ist bei HAPAK-Importen das HAPAK-Anlagedatum, also nicht
+ * der echte Baubeginn — daher zuletzt.
+ */
 export function effektiverStart(p: ProjektBerechnung): Date {
-  return p.startdatumIst ?? p.startdatumGeplant;
+  return p.projektStartManuell ?? p.startdatumIst ?? p.startdatumGeplant;
 }
 
 /** Maßgebliches Ende: Ist vor Plan. */

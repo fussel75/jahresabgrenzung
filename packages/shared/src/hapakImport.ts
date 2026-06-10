@@ -82,6 +82,8 @@ export interface ImportProjekt {
   auftragssummeQuelle: string; // woraus abgeleitet
   istKostenStichtag: number; // Σ Eingangsrechnungen (bis Stichtag)
   startdatum: Date | null;
+  /** Geschätzter echter Projekt-Start: Datum der ersten Ausgangsrechnung (sonst null). */
+  projektStartGeschaetzt: Date | null;
   enddatum: Date | null; // Schlussrechnung; null => läuft
   laeuft: boolean;
   sammelprojekt: boolean; // "Kleinprojekte"-Bündel -> Sonderbehandlung
@@ -282,6 +284,10 @@ export function mappeHapakImport(
       startdatum,
       enddatum,
       laeuft: enddatum === null,
+      projektStartGeschaetzt: ausgang
+        .map((f) => f.belegdat)
+        .filter((d): d is Date => d instanceof Date)
+        .sort((a, b) => a.getTime() - b.getTime())[0] ?? null,
       zahlungen,
       kostenpositionen,
       anzahlEingangsrechnungen: eingang.length,

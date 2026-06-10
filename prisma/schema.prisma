@@ -27,10 +27,15 @@ model Projekt {
   bezeichnung               String
   kunde                     String
   kundenadresse             String?
-  startdatumGeplant         DateTime
+  startdatumGeplant         DateTime // bei HAPAK-Import: HAPAK-Anlagedatum (informativ)
   enddatumGeplant           DateTime
   startdatumIst             DateTime?
   enddatumIst               DateTime?
+  // Manueller "Projekt-Start" = echter Baubeginn (geplant oder ist).
+  // Wenn gesetzt, ist das die maßgebliche Start-Quelle für Gantt + Abgrenzung;
+  // HAPAK-Import schätzt ihn beim ERSTEN Import aus der ersten Rechnung und
+  // ueberschreibt einen vorhandenen Wert nie.
+  projektStartManuell       DateTime?
   auftragssummeNetto        Decimal
   gesamtkostenGeplant       Decimal
   istKostenStichtag         Decimal          @default(0)

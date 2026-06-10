@@ -91,6 +91,7 @@ export const projektBaseSchema = z.object({
   enddatumGeplant: isoDate,
   startdatumIst: isoDate.optional().nullable(),
   enddatumIst: isoDate.optional().nullable(),
+  projektStartManuell: isoDate.optional().nullable(),
   auftragssummeNetto: geldBetrag.nonnegative(),
   gesamtkostenGeplant: geldBetrag.nonnegative(),
   istKostenStichtag: geldBetrag.nonnegative().default(0),

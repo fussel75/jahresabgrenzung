@@ -33,12 +33,25 @@ export function useAbgrenzung() {
   return { ergebnis, projekte, laedt, fehler };
 }
 
-/** Maßgebliches Start-/Enddatum (Ist vor Plan). */
+/**
+ * Maßgeblicher Zeitraum für Anzeige/Abgrenzung.
+ * Start-Priorität: manueller Projekt-Start -> Ist -> Plan (= HAPAK-Anlage).
+ */
 export function effektiverZeitraum(p: Projekt): { start: Date; ende: Date } {
   return {
-    start: parseISO(p.startdatumIst ?? p.startdatumGeplant),
+    start: parseISO(p.projektStartManuell ?? p.startdatumIst ?? p.startdatumGeplant),
     ende: parseISO(p.enddatumIst ?? p.enddatumGeplant),
   };
+}
+
+/**
+ * "Echt begonnen": Projekt-Start manuell gesetzt ODER mindestens eine
+ * Ausgangsrechnung vorhanden. Vor diesem Moment ist das Projekt "noch nicht
+ * gestartet" und wird im Dashboard/Abgrenzung ausgeblendet.
+ */
+export function projektGestartet(p: Projekt): boolean {
+  if (p.projektStartManuell) return true;
+  return (p.zahlungen?.length ?? 0) > 0;
 }
 
 /** Abgrenzungsbedarf: Start ≤ Stichtag UND Ende > Stichtag (Ende des GJ). */

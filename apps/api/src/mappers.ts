@@ -21,6 +21,7 @@ export function toBerechnung(p: ProjektMitRelationen): ProjektBerechnung {
     enddatumGeplant: p.enddatumGeplant,
     startdatumIst: p.startdatumIst,
     enddatumIst: p.enddatumIst,
+    projektStartManuell: p.projektStartManuell,
     auftragssummeNetto: dec(p.auftragssummeNetto),
     gesamtkostenGeplant: dec(p.gesamtkostenGeplant),
     istKostenStichtag: dec(p.istKostenStichtag),

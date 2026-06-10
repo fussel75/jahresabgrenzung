@@ -92,12 +92,19 @@ export function Projektdetail() {
             <Feld label="Kunde" wert={projekt.kunde} />
             <Feld label="Gewerk" wert={GEWERK_LABEL[projekt.gewerk]} />
             <Feld label="Auftragssumme (netto)" wert={euro(projekt.auftragssummeNetto)} />
-            <Feld label="Start (geplant)" wert={datum(projekt.startdatumGeplant)} />
+            <Feld
+              label="Projekt-Start"
+              wert={projekt.projektStartManuell ? datum(projekt.projektStartManuell) : '— (nicht gesetzt)'}
+            />
             <Feld label="Ende (geplant)" wert={datum(projekt.enddatumGeplant)} />
             <Feld label="Ende (Ist)" wert={projekt.enddatumIst ? datum(projekt.enddatumIst) : '–'} />
             <Feld label="Geplante Gesamtkosten" wert={euro(projekt.gesamtkostenGeplant)} />
             <Feld label="Ist-Kosten (Stichtag)" wert={euro(projekt.istKostenStichtag)} />
             <Feld label="Manueller Grad" wert={projekt.fertigstellungGradManuell != null ? prozent(projekt.fertigstellungGradManuell * 100) : '–'} />
+            <Feld
+              label="HAPAK-Anlage"
+              wert={`${datum(projekt.startdatumGeplant)} (informativ)`}
+            />
           </dl>
           {projekt.notizen && <p className="mt-3 text-sm text-gray-600">{projekt.notizen}</p>}
         </Card>
@@ -208,6 +215,7 @@ function StammdatenForm({ projekt, onGespeichert }: { projekt: Projekt; onGespei
     auftragssummeNetto: projekt.auftragssummeNetto,
     gesamtkostenGeplant: projekt.gesamtkostenGeplant,
     istKostenStichtag: projekt.istKostenStichtag,
+    projektStartManuell: projekt.projektStartManuell ? isoTag(projekt.projektStartManuell) : '',
     enddatumIst: projekt.enddatumIst ? isoTag(projekt.enddatumIst) : '',
     fertigstellungGradManuell: projekt.fertigstellungGradManuell ?? '',
     status: projekt.status,
@@ -223,6 +231,7 @@ function StammdatenForm({ projekt, onGespeichert }: { projekt: Projekt; onGespei
         auftragssummeNetto: Number(f.auftragssummeNetto),
         gesamtkostenGeplant: Number(f.gesamtkostenGeplant),
         istKostenStichtag: Number(f.istKostenStichtag),
+        projektStartManuell: f.projektStartManuell || null,
         enddatumIst: f.enddatumIst || null,
         fertigstellungGradManuell: f.fertigstellungGradManuell === '' ? null : Number(f.fertigstellungGradManuell),
         status: f.status,
@@ -245,6 +254,11 @@ function StammdatenForm({ projekt, onGespeichert }: { projekt: Projekt; onGespei
         <label className="text-xs text-gray-500">Auftragssumme netto<input type="number" className={inp} value={f.auftragssummeNetto} onChange={(e) => setF({ ...f, auftragssummeNetto: e.target.value as never })} /></label>
         <label className="text-xs text-gray-500">Geplante Gesamtkosten<input type="number" className={inp} value={f.gesamtkostenGeplant} onChange={(e) => setF({ ...f, gesamtkostenGeplant: e.target.value as never })} /></label>
         <label className="text-xs text-gray-500">Ist-Kosten (Stichtag)<input type="number" className={inp} value={f.istKostenStichtag} onChange={(e) => setF({ ...f, istKostenStichtag: e.target.value as never })} /></label>
+        <label className="text-xs text-gray-500">
+          Projekt-Start
+          <input type="date" className={inp} value={f.projektStartManuell} onChange={(e) => setF({ ...f, projektStartManuell: e.target.value })} />
+          <span className="mt-0.5 block text-[10px] text-gray-400">Echter Baubeginn — leer = Projekt gilt als noch nicht gestartet.</span>
+        </label>
         <label className="text-xs text-gray-500">Ende (Ist)<input type="date" className={inp} value={f.enddatumIst} onChange={(e) => setF({ ...f, enddatumIst: e.target.value })} /></label>
         <label className="text-xs text-gray-500">Manueller Grad (0–1)<input type="number" step="0.05" min="0" max="1" className={inp} value={f.fertigstellungGradManuell} onChange={(e) => setF({ ...f, fertigstellungGradManuell: e.target.value as never })} /></label>
         <label className="text-xs text-gray-500">Status
