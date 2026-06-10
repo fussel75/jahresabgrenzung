@@ -45,12 +45,13 @@ export function effektiverZeitraum(p: Projekt): { start: Date; ende: Date } {
 }
 
 /**
- * "Echt begonnen": Projekt-Start manuell gesetzt ODER mindestens eine
- * Ausgangsrechnung vorhanden. Vor diesem Moment ist das Projekt "noch nicht
- * gestartet" und wird im Dashboard/Abgrenzung ausgeblendet.
+ * "Echt begonnen": Projekt-Start gesetzt ODER bereits Ist-Kosten ODER
+ * Zahlungen vorhanden. (Die Listen-API liefert nicht immer Zahlungen mit;
+ * istKostenStichtag > 0 ist ein zuverlässiges Signal, dass etwas passiert ist.)
  */
 export function projektGestartet(p: Projekt): boolean {
   if (p.projektStartManuell) return true;
+  if (p.istKostenStichtag > 0) return true;
   return (p.zahlungen?.length ?? 0) > 0;
 }
 

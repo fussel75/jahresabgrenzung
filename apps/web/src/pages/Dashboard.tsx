@@ -29,10 +29,13 @@ export function Dashboard() {
 
   const ganttProjekte: GanttProjekt[] = useMemo(() => {
     if (!ergebnis) return [];
+    // Konsistenz mit KPIs/Bericht: nur Projekte, die das Backend in die
+    // Abgrenzungsberechnung aufgenommen hat (Storniert/Angebot sind dort
+    // schon ausgefiltert). Zusätzlich "noch nicht gestartet" blenden wir
+    // hier weich aus (kein Projekt-Start UND keine istKosten/Zahlungen).
+    const aktive = new Set(ergebnis.projekte.map((p) => p.projektId));
     return projekte
-      .filter((p) => p.status !== 'STORNIERT' && p.status !== 'ANGEBOT')
-      // "Noch nicht gestartet" ausblenden: kein Projekt-Start gesetzt und
-      // keine einzige Ausgangsrechnung -> faktisch nichts passiert.
+      .filter((p) => aktive.has(p.id))
       .filter(projektGestartet)
       .map((p) => {
         const a = ergebnis.projekte.find((e) => e.projektId === p.id);
