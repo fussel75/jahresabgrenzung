@@ -25,6 +25,7 @@ type Skala = 'tag' | 'woche' | 'monat' | 'jahr';
 const PX_PRO_TAG: Record<Skala, number> = { tag: 16, woche: 6, monat: 2.2, jahr: 0.6 };
 
 const LEFT_PAD = 8;
+const RIGHT_PAD = 56; // Platz, damit das letzte Jahres-/Monatslabel nicht abgeschnitten wird
 const ROW_H = 30;
 const AXIS_H = 40; // mehr Platz für Jahreszahlen + Jahreswechsel-Label übereinander
 
@@ -60,7 +61,7 @@ export function GanttChart({ projekte, stichtag, heute = new Date(), onProjektCl
     const tage = differenceInCalendarDays(e, s);
     const monate = eachMonthOfInterval({ start: s, end: e });
     const jahre = eachYearOfInterval({ start: s, end: e });
-    return { start: s, ende: e, breite: tage * pxProTag + LEFT_PAD * 2, monate, jahre };
+    return { start: s, ende: e, breite: tage * pxProTag + LEFT_PAD + RIGHT_PAD, monate, jahre };
   }, [projekte, stichtag, pxProTag]);
 
   const hoehe = projekte.length * ROW_H + AXIS_H + 8;
