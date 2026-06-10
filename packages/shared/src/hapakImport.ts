@@ -104,27 +104,6 @@ function hapakTypZuZahlungsart(typundnr: string): ZahlungsArt {
   }
 }
 
-/** Auftragssummen-Heuristik: AB > Gesamt-Kalkulation > Angebot(max) > Σ Ausgangsrechnungen. */
-function ermittleAuftragssumme(
-  dokumente: HapakDokRow[],
-  summeAusgang: number,
-): { betrag: number; quelle: string } {
-  const norm = (s: string) => s.trim().toLowerCase();
-  const ab = dokumente.filter((d) => norm(d.typundnr).startsWith('auftragsbest'));
-  if (ab.length) return { betrag: round2(Math.max(...ab.map((d) => d.netto))), quelle: 'Auftragsbestätigung' };
-
-  const kalk = dokumente.filter((d) => {
-    const t = norm(d.typundnr);
-    return t.startsWith('kostenkalkulation') || t.startsWith('mitschnitt') || t.startsWith('kostenschätzung');
-  });
-  if (kalk.length) return { betrag: round2(Math.max(...kalk.map((d) => d.netto))), quelle: 'Kalkulation' };
-
-  const ang = dokumente.filter((d) => norm(d.typundnr).startsWith('angebot'));
-  if (ang.length) return { betrag: round2(Math.max(...ang.map((d) => d.netto))), quelle: 'Angebot' };
-
-  return { betrag: round2(summeAusgang), quelle: 'Ausgangsrechnungen' };
-}
-
 /**
  * Bildet aus HAPAK-Rohdaten die Import-Projekte (gruppiert über PROJNAME/KTR).
  * Nur Projekte mit Aktivität ab `abJahr` werden zurückgegeben.
@@ -238,11 +217,12 @@ export function mappeHapakImport(
       .filter((d): d is Date => d instanceof Date);
     const enddatum = schluss.length ? new Date(Math.max(...schluss.map((d) => d.getTime()))) : null;
 
+    // Auftragssumme = Summe der Ausgangsrechnungen (netto, abzgl. Gutschriften).
+    // Angebote/AB sind in HAPAK nicht eindeutig genug; die Rechnungen sind real.
     const summeAusgang = ausgang.reduce((s, f) => s + f.netto, 0);
-    const { betrag: auftragssummeNetto, quelle: auftragssummeQuelle } = ermittleAuftragssumme(
-      dks,
-      summeAusgang,
-    );
+    const summeGutschrift = gutschrift.reduce((s, f) => s + Math.abs(f.netto), 0);
+    const auftragssummeNetto = round2(summeAusgang - summeGutschrift);
+    const auftragssummeQuelle = 'Ausgangsrechnungen';
 
     const bezeichnung = (kopf?.betreff || fbs[0]?.betreff || proj).trim();
     ergebnis.push({

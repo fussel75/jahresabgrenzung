@@ -88,33 +88,29 @@ describe('mappeHapakImport', () => {
     expect(r[0].enddatum).toBeNull();
   });
 
-  it('Auftragssumme-Heuristik: Auftragsbestätigung hat Vorrang vor Angebot', () => {
+  it('Auftragssumme = Summe der Ausgangsrechnungen (Angebote werden ignoriert)', () => {
+    // Fall Ben Ritter: ein 160k-Gewerk-Angebot, aber real nur 1 Rechnung über 8.000.
     const dokumente = [
-      dok({ name: 'PX1', projname: 'PX1', betreff: 'BV', datum: d('2024-01-01') }),
-      dok({ name: 'A1', projname: 'PX1', typundnr: 'Angebot 24-00006', netto: 60000, datum: d('2024-01-05') }),
-      dok({ name: 'AB1', projname: 'PX1', typundnr: 'Auftragsbestätigung 24-00006', netto: 65000, datum: d('2024-01-10') }),
+      dok({ name: 'PX1', projname: 'PX1', betreff: 'Neubau EFH', datum: d('2025-01-01') }),
+      dok({ name: 'A1', projname: 'PX1', typundnr: 'Angebot 25-00006', netto: 160000, datum: d('2025-01-05') }),
+      dok({ name: 'R53', projname: 'PX1', typundnr: 'Rechnung 25-00053', datum: d('2025-07-10') }),
     ];
-    const r = mappeHapakImport(dokumente, [], adr, { abJahr: 2024 });
-    expect(r[0].auftragssummeNetto).toBe(65000);
-    expect(r[0].auftragssummeQuelle).toBe('Auftragsbestätigung');
-  });
-
-  it('Auftragssumme fällt auf Ausgangsrechnungen zurück, wenn kein Angebot/AB', () => {
     const fibu = [
-      fib({ art: 'RA', typ: 'HR', ktr: 'PX1', rnr: 'R1', netto: 20000, belegdat: d('2026-02-01') }),
-      fib({ art: 'RA', typ: 'HR', ktr: 'PX1', rnr: 'R2', netto: 15000, belegdat: d('2026-06-01') }),
+      fib({ art: 'RA', typ: 'HR', ktr: 'PX1', rnr: 'R53', netto: 8000, belegdat: d('2025-07-10') }),
     ];
-    const r = mappeHapakImport([], fibu, adr, { abJahr: 2024 });
-    expect(r[0].auftragssummeNetto).toBe(35000);
+    const r = mappeHapakImport(dokumente, fibu, adr, { abJahr: 2024 });
+    expect(r[0].auftragssummeNetto).toBe(8000);
     expect(r[0].auftragssummeQuelle).toBe('Ausgangsrechnungen');
   });
 
-  it('Gutschrift (HG) wird negativ als STORNO erfasst', () => {
+  it('Gutschrift (HG): STORNO-Zahlung negativ und mindert die Auftragssumme', () => {
     const fibu = [
-      fib({ art: 'RA', typ: 'HG', ktr: 'PX1', rnr: 'G1', netto: 5000, zahlung: 5000, belegdat: d('2026-05-01') }),
+      fib({ art: 'RA', typ: 'HR', ktr: 'PX1', rnr: 'R1', netto: 10000, belegdat: d('2026-02-01') }),
+      fib({ art: 'RA', typ: 'HG', ktr: 'PX1', rnr: 'G1', netto: 2000, zahlung: 2000, belegdat: d('2026-05-01') }),
     ];
     const r = mappeHapakImport([], fibu, adr, { abJahr: 2024 });
-    expect(r[0].zahlungen[0].art).toBe('STORNO');
-    expect(r[0].zahlungen[0].betragNetto).toBe(-5000);
+    expect(r[0].auftragssummeNetto).toBe(8000);
+    const storno = r[0].zahlungen.find((z) => z.art === 'STORNO');
+    expect(storno?.betragNetto).toBe(-2000);
   });
 });
