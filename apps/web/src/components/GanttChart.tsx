@@ -79,7 +79,7 @@ export function GanttChart({ projekte, stichtag, heute = new Date(), onProjektCl
           <button
             key={s}
             onClick={() => setSkala(s)}
-            className={`rounded px-2 py-0.5 capitalize ${
+            className={`rounded px-2.5 py-1.5 capitalize sm:py-1 ${
               skala === s ? 'bg-anthrazit text-white' : 'bg-gray-100 text-gray-700'
             }`}
           >

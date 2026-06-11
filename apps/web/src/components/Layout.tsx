@@ -47,19 +47,20 @@ export function Layout() {
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <Onboarding />
       <header className="bg-anthrazit text-white">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center">
+        <div className="mx-auto flex max-w-7xl flex-col gap-2 px-3 py-3 sm:flex-row sm:items-center sm:gap-3 sm:px-4">
           <div className="flex items-center gap-2">
             <span className="text-lg font-bold">Jahresabgrenzung</span>
             <span className="hidden text-xs text-gray-300 sm:inline">FriStD-Bau ZuB</span>
           </div>
-          <nav className="flex flex-wrap gap-1 sm:ml-6">
+          {/* Auf Mobile: eine wischbare Zeile statt Umbruch über mehrere Zeilen. */}
+          <nav className="-mx-3 flex gap-1 overflow-x-auto whitespace-nowrap px-3 sm:mx-0 sm:ml-6 sm:flex-wrap sm:overflow-visible sm:px-0">
             {NAV.map((n) => (
               <NavLink
                 key={n.to}
                 to={n.to}
                 end={n.end}
                 className={({ isActive }) =>
-                  `rounded px-3 py-1.5 text-sm font-medium ${
+                  `shrink-0 rounded px-3 py-2 text-sm font-medium sm:py-1.5 ${
                     isActive ? 'bg-white/20' : 'text-gray-200 hover:bg-white/10'
                   }`
                 }
@@ -71,7 +72,7 @@ export function Layout() {
         </div>
         {/* Kontext-Leiste: Geschäftsjahr + Methode (global) */}
         <div className="border-t border-white/10 bg-dunkelblau">
-          <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-2 text-sm">
+          <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2 text-sm sm:px-4">
             <label className="flex items-center gap-2">
               <span className="text-gray-300">Geschäftsjahr</span>
               <select

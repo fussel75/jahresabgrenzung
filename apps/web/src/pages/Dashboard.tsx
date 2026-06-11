@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { parseISO } from 'date-fns';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { useAppState } from '../state';
 import { useAbgrenzung, effektiverZeitraum, projektGestartet } from '../hooks';
 import { euro } from '../format';
@@ -58,10 +57,11 @@ export function Dashboard() {
   if (fehler) return <LeerHinweis>Fehler beim Laden: {fehler}</LeerHinweis>;
   if (!gj || !ergebnis) return <LeerHinweis>Kein Geschäftsjahr ausgewählt.</LeerHinweis>;
 
-  const donutDaten = [
-    { name: 'Stichjahr', value: ergebnis.summen.auftragssummeStichjahr, fill: '#16a34a' },
-    { name: 'Folgejahr', value: ergebnis.summen.auftragssummeFolgejahr, fill: '#f97316' },
-  ];
+  // Kompakte Verteilung Stichjahr/Folgejahr (ersetzt den großen Donut).
+  const stj = ergebnis.summen.auftragssummeStichjahr;
+  const fj = ergebnis.summen.auftragssummeFolgejahr;
+  const gesamt = stj + fj;
+  const stjProzent = gesamt > 0 ? (stj / gesamt) * 100 : 0;
 
   return (
     <div className="space-y-6">
@@ -80,35 +80,39 @@ export function Dashboard() {
         <KpiCard label="PRAP" wert={euro(ergebnis.summen.prap)} />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <h2 className="mb-3 font-semibold text-anthrazit">Zeitachse der Projekte</h2>
-          {ganttProjekte.length === 0 ? (
-            <LeerHinweis>Keine aktiven Projekte.</LeerHinweis>
-          ) : (
-            <GanttChart
-              projekte={ganttProjekte}
-              stichtag={parseISO(gj.ende)}
-              onProjektClick={(id) => navigate(`/projekte/${id}`)}
-            />
-          )}
-        </Card>
+      <Card>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-semibold text-anthrazit">Zeitachse der Projekte</h2>
+        </div>
 
-        <Card>
-          <h2 className="mb-3 font-semibold text-anthrazit">Auftragssumme Stichjahr / Folgejahr</h2>
-          <ResponsiveContainer width="100%" height={240}>
-            <PieChart>
-              <Pie data={donutDaten} dataKey="value" nameKey="name" innerRadius={55} outerRadius={85} paddingAngle={2}>
-                {donutDaten.map((d, i) => (
-                  <Cell key={i} fill={d.fill} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(v: number) => euro(v)} />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </Card>
-      </div>
+        {/* Kompakte Verteilung: Auftragssumme Stichjahr vs. Folgejahr */}
+        {gesamt > 0 && (
+          <div className="mb-4">
+            <div className="mb-1 flex flex-wrap items-center justify-between gap-x-4 gap-y-0.5 text-xs text-gray-600">
+              <span>Auftragssumme Stichjahr / Folgejahr</span>
+              <span>
+                <span className="font-semibold text-stichjahr">{euro(stj)}</span>
+                {' · '}
+                <span className="font-semibold text-folgejahr">{euro(fj)}</span>
+              </span>
+            </div>
+            <div className="flex h-4 w-full overflow-hidden rounded-full" title={`Stichjahr ${euro(stj)} · Folgejahr ${euro(fj)}`}>
+              <div className="bg-stichjahr" style={{ width: `${stjProzent}%` }} />
+              <div className="flex-1 bg-folgejahr" />
+            </div>
+          </div>
+        )}
+
+        {ganttProjekte.length === 0 ? (
+          <LeerHinweis>Keine aktiven Projekte.</LeerHinweis>
+        ) : (
+          <GanttChart
+            projekte={ganttProjekte}
+            stichtag={parseISO(gj.ende)}
+            onProjektClick={(id) => navigate(`/projekte/${id}`)}
+          />
+        )}
+      </Card>
     </div>
   );
 }

@@ -390,7 +390,7 @@ function Zahlungen({ projekt, onAenderung }: { projekt: Projekt; onAenderung: ()
               <td className="py-1">{datum(z.datum)}</td>
               <td className="py-1">{ZAHLUNGSART_LABEL[z.art]}</td>
               <td className="py-1 text-right">{euro(z.betragNetto)}</td>
-              <td className="py-1 text-right"><button onClick={() => loeschen(z.id)} className="text-red-500 hover:underline">×</button></td>
+              <td className="py-1 text-right"><button onClick={() => loeschen(z.id)} className="-my-1 rounded px-2 py-1 text-red-500 hover:bg-red-50" title="Eintrag löschen">×</button></td>
             </tr>
           ))}
           {(projekt.zahlungen ?? []).length === 0 && <tr><td className="py-2 text-gray-400" colSpan={4}>Keine Zahlungen erfasst.</td></tr>}
@@ -464,7 +464,7 @@ function Kostenpositionen({
               <td className="py-1">{datum(k.datum)}</td>
               <td className="py-1">{KOSTENART_LABEL[k.art]}</td>
               <td className="py-1 text-right">{euro(k.betragNetto)}</td>
-              <td className="py-1 text-right"><button onClick={() => loeschen(k.id)} className="text-red-500 hover:underline">×</button></td>
+              <td className="py-1 text-right"><button onClick={() => loeschen(k.id)} className="-my-1 rounded px-2 py-1 text-red-500 hover:bg-red-50" title="Eintrag löschen">×</button></td>
             </tr>
           ))}
           {(projekt.kostenpositionen ?? []).length === 0 && <tr><td className="py-2 text-gray-400" colSpan={4}>Keine Kostenpositionen erfasst.</td></tr>}
