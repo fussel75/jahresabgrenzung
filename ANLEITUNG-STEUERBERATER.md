@@ -44,6 +44,7 @@ Die eingeschränkt zulässigen Methoden sind in der App **gelb markiert**.
 ## 5. Bewertungs-Stellhebel (Simulation)
 
 - **Einstellungen → „Kostenarten in der Abgrenzung":** Auswahl, welche Kostenarten in die Ist-Kosten und damit in die **unfertigen Leistungen** einfließen — zum Durchspielen der Herstellungskosten-Bewertung (Wertunter-/-obergrenze, § 255 HGB). Beim Abwählen von Pflichtbestandteilen erscheint automatisch ein Hinweis.
+- **Projektdetail → „Voraussichtliches Ende":** Bei laufenden Projekten steuert das geplante Ende, ob das Projekt über den Jahreswechsel läuft (Abgrenzungsbedarf) — zentraler Hebel für die zeitliche Zuordnung der Gewinnrealisierung. Das **tatsächliche Ende** (Schlussrechnung aus HAPAK) hat Vorrang, sobald es vorliegt.
 - **Projektdetail → „Manueller Grad":** projektbezogene Was-wäre-wenn-Rechnung.
 - Im Projektdetail zeigen die Kostenarten-Chips deaktivierte Arten **durchgestrichen** — es ist immer sichtbar, was eingerechnet ist.
 
@@ -60,7 +61,7 @@ Die Konten sind **Platzhalter** und unter *Einstellungen → Konten* zu hinterle
 
 ## 7. Empfohlener Ablauf zum Jahresabschluss
 
-1. Herr Friedrich aktualisiert die Daten (Import aus HAPAK) und prüft die Projektliste (Status, Projekt-Start, kalkulierte Gesamtkosten).
+1. Herr Friedrich aktualisiert die Daten (Import aus HAPAK) und prüft die Projektliste (Status, Projekt-Start, **voraussichtliches Ende**, kalkulierte Gesamtkosten).
 2. Geschäftsjahr wählen → **Abgrenzungsbericht** öffnen (Methode: Completed Contract).
 3. Plausibilisierung im Projektdetail (Methodenvergleich, Kostenarten-Chips).
 4. Export **Excel/PDF** für die Akte, **Buchungssatz-CSV** als Buchungsvorlage.

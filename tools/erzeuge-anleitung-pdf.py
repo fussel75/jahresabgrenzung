@@ -131,6 +131,9 @@ story = [
     li("<b>Einstellungen → „Kostenarten in der Abgrenzung“:</b> Auswahl, welche Kostenarten in die Ist-Kosten und "
        "damit in die <b>unfertigen Leistungen</b> einfließen — zum Durchspielen der Herstellungskosten-Bewertung "
        "(Wertunter-/-obergrenze, § 255 HGB). Beim Abwählen von Pflichtbestandteilen warnt die App automatisch."),
+    li("<b>Projektdetail → „Voraussichtliches Ende“:</b> Bei laufenden Projekten steuert das geplante Ende, ob das "
+       "Projekt über den Jahreswechsel läuft (Abgrenzungsbedarf) — zentraler Hebel für die zeitliche Zuordnung der "
+       "Gewinnrealisierung. Das <b>tatsächliche Ende</b> (Schlussrechnung aus HAPAK) hat Vorrang, sobald es vorliegt."),
     li("<b>Projektdetail → „Manueller Grad“:</b> projektbezogene Was-wäre-wenn-Rechnung."),
     li("Deaktivierte Kostenarten werden im Projektdetail <b>durchgestrichen</b> angezeigt — es ist stets sichtbar, "
        "was eingerechnet ist."),
@@ -146,7 +149,7 @@ story = [
       "ersten Einsatz gemeinsam festlegen."),
 
     t("7&nbsp;&nbsp;Empfohlener Ablauf zum Jahresabschluss", "h2"),
-    num("1. Herr Friedrich aktualisiert die Daten (HAPAK-Import) und prüft die Projektliste (Status, Projekt-Start, kalkulierte Gesamtkosten)."),
+    num("1. Herr Friedrich aktualisiert die Daten (HAPAK-Import) und prüft die Projektliste (Status, Projekt-Start, <b>voraussichtliches Ende</b>, kalkulierte Gesamtkosten)."),
     num("2. Geschäftsjahr wählen → <b>Abgrenzungsbericht</b> öffnen (Methode: Completed Contract)."),
     num("3. Plausibilisierung im Projektdetail (Methodenvergleich, Kostenarten-Chips)."),
     num("4. Export <b>Excel/PDF</b> für die Akte, <b>Buchungssatz-CSV</b> als Buchungsvorlage."),

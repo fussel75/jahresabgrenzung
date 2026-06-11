@@ -134,8 +134,11 @@ export function Projektdetail() {
               label="Projekt-Start"
               wert={projekt.projektStartManuell ? datum(projekt.projektStartManuell) : '— (nicht gesetzt)'}
             />
-            <Feld label="Ende (geplant)" wert={datum(projekt.enddatumGeplant)} />
-            <Feld label="Ende (Ist)" wert={projekt.enddatumIst ? datum(projekt.enddatumIst) : '–'} />
+            <Feld
+              label="Ende (voraussichtlich)"
+              wert={`${datum(projekt.enddatumGeplant)}${projekt.enddatumIst ? '' : ' — maßgeblich, solange kein Ist-Ende'}`}
+            />
+            <Feld label="Ende (tatsächlich)" wert={projekt.enddatumIst ? datum(projekt.enddatumIst) : '– (Projekt läuft)'} />
             <Feld
               label="Gesamtkosten (kalkuliert)"
               wert={`${euro(projekt.gesamtkostenGeplant)} — bei abgeschlossenen Projekten = tatsächliche`}
@@ -271,6 +274,7 @@ function StammdatenForm({ projekt, onGespeichert }: { projekt: Projekt; onGespei
     gesamtkostenGeplant: projekt.gesamtkostenGeplant,
     istKostenStichtag: projekt.istKostenStichtag,
     projektStartManuell: projekt.projektStartManuell ? isoTag(projekt.projektStartManuell) : '',
+    enddatumGeplant: isoTag(projekt.enddatumGeplant),
     enddatumIst: projekt.enddatumIst ? isoTag(projekt.enddatumIst) : '',
     fertigstellungGradManuell: projekt.fertigstellungGradManuell ?? '',
     status: projekt.status,
@@ -287,6 +291,7 @@ function StammdatenForm({ projekt, onGespeichert }: { projekt: Projekt; onGespei
         gesamtkostenGeplant: Number(f.gesamtkostenGeplant),
         istKostenStichtag: Number(f.istKostenStichtag),
         projektStartManuell: f.projektStartManuell || null,
+        enddatumGeplant: f.enddatumGeplant || undefined,
         enddatumIst: f.enddatumIst || null,
         fertigstellungGradManuell: f.fertigstellungGradManuell === '' ? null : Number(f.fertigstellungGradManuell),
         status: f.status,
@@ -329,7 +334,20 @@ function StammdatenForm({ projekt, onGespeichert }: { projekt: Projekt; onGespei
           <input type="date" lang="de-DE" className={inp} value={f.projektStartManuell} onChange={(e) => setF({ ...f, projektStartManuell: e.target.value })} />
           <span className="mt-0.5 block text-[10px] text-gray-400">Echter Baubeginn — leer = Projekt gilt als noch nicht gestartet.</span>
         </label>
-        <label className="text-xs text-gray-500">Ende (Ist)<input type="date" lang="de-DE" className={inp} value={f.enddatumIst} onChange={(e) => setF({ ...f, enddatumIst: e.target.value })} /></label>
+        <label className="text-xs text-gray-500">
+          Voraussichtliches Ende
+          <input type="date" lang="de-DE" className={inp} value={f.enddatumGeplant} onChange={(e) => setF({ ...f, enddatumGeplant: e.target.value })} />
+          <span className="mt-0.5 block text-[10px] text-gray-400">
+            Bei laufenden Projekten maßgeblich für die Abgrenzung. Wird vom HAPAK-Import nicht überschrieben.
+          </span>
+        </label>
+        <label className="text-xs text-gray-500">
+          Tatsächliches Ende
+          <input type="date" lang="de-DE" className={inp} value={f.enddatumIst} onChange={(e) => setF({ ...f, enddatumIst: e.target.value })} />
+          <span className="mt-0.5 block text-[10px] text-gray-400">
+            Hat Vorrang, sobald gesetzt (kommt sonst automatisch mit der Schlussrechnung aus HAPAK).
+          </span>
+        </label>
         <label className="text-xs text-gray-500">Manueller Grad (0–1)<input type="number" step="0.05" min="0" max="1" className={inp} value={f.fertigstellungGradManuell} onChange={(e) => setF({ ...f, fertigstellungGradManuell: e.target.value as never })} /></label>
         <label className="text-xs text-gray-500">Status
           <select className={inp} value={f.status} onChange={(e) => setF({ ...f, status: e.target.value as never })}>
