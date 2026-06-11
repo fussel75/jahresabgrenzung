@@ -426,6 +426,7 @@ function Kostenpositionen({
   const [datumF, setDatumF] = useState('');
   const [betrag, setBetrag] = useState(0);
   const [art, setArt] = useState('MATERIAL');
+  const [offen, setOffen] = useState<Set<KostenArt>>(new Set());
 
   async function hinzufuegen() {
     if (!datumF || !betrag) return;
@@ -438,38 +439,91 @@ function Kostenpositionen({
     onAenderung();
   }
 
+  // Gruppierung nach Kostenart (Summenzeile, ausklappbar zu den Einzelbuchungen).
+  const aktivByArt = new Map(zusammenfassung.map((z) => [z.art, z.aktiv]));
+  const gruppen = ALLE_KOSTENARTEN.map((a) => {
+    const eintraege = (projekt.kostenpositionen ?? [])
+      .filter((k) => k.art === a)
+      .sort((x, y) => x.datum.localeCompare(y.datum));
+    return {
+      art: a,
+      eintraege,
+      summe: eintraege.reduce((s, k) => s + k.betragNetto, 0),
+      aktiv: aktivByArt.get(a) ?? true,
+    };
+  }).filter((g) => g.eintraege.length > 0);
+
+  function toggleGruppe(a: KostenArt) {
+    setOffen((alt) => {
+      const neu = new Set(alt);
+      if (neu.has(a)) neu.delete(a);
+      else neu.add(a);
+      return neu;
+    });
+  }
+  const alleOffen = gruppen.length > 0 && gruppen.every((g) => offen.has(g.art));
+
   const inp = 'rounded border border-gray-300 px-2 py-1 text-sm';
   return (
     <Card>
-      <h2 className="mb-2 font-semibold text-anthrazit">Kostenpositionen</h2>
-      {zusammenfassung.length > 0 && (
-        <div className="mb-3 flex flex-wrap gap-2 text-xs">
-          {zusammenfassung.map((z) => (
-            <span
-              key={z.art}
-              title={z.aktiv ? 'wird eingerechnet' : 'in den Einstellungen deaktiviert — wird NICHT eingerechnet'}
-              className={`rounded-full px-2.5 py-0.5 font-medium ${
-                z.aktiv ? 'bg-gray-100 text-gray-800' : 'bg-gray-50 text-gray-400 line-through'
-              }`}
-            >
-              {KOSTENART_LABEL[z.art]} {euro(z.summe)}
-            </span>
-          ))}
-        </div>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <h2 className="font-semibold text-anthrazit">Kostenpositionen</h2>
+        {gruppen.length > 0 && (
+          <button
+            onClick={() => setOffen(alleOffen ? new Set() : new Set(gruppen.map((g) => g.art)))}
+            className="rounded border border-gray-300 bg-white px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50"
+          >
+            {alleOffen ? 'Alle zuklappen' : 'Alle aufklappen'}
+          </button>
+        )}
+      </div>
+
+      {gruppen.length === 0 && (
+        <p className="py-2 text-sm text-gray-400">Keine Kostenpositionen erfasst.</p>
       )}
-      <table className="w-full text-sm">
-        <tbody>
-          {(projekt.kostenpositionen ?? []).map((k) => (
-            <tr key={k.id} className="border-b border-gray-100">
-              <td className="py-1">{datum(k.datum)}</td>
-              <td className="py-1">{KOSTENART_LABEL[k.art]}</td>
-              <td className="py-1 text-right">{euro(k.betragNetto)}</td>
-              <td className="py-1 text-right"><button onClick={() => loeschen(k.id)} className="-my-1 rounded px-2 py-1 text-red-500 hover:bg-red-50" title="Eintrag löschen">×</button></td>
-            </tr>
-          ))}
-          {(projekt.kostenpositionen ?? []).length === 0 && <tr><td className="py-2 text-gray-400" colSpan={4}>Keine Kostenpositionen erfasst.</td></tr>}
-        </tbody>
-      </table>
+
+      <div className="divide-y divide-gray-100">
+        {gruppen.map((g) => (
+          <div key={g.art}>
+            {/* Summenzeile je Kostenart — Klick klappt die Einzelbuchungen auf */}
+            <button
+              onClick={() => toggleGruppe(g.art)}
+              className="flex w-full items-center gap-2 py-2 text-left text-sm hover:bg-gray-50"
+              title={g.aktiv ? 'wird eingerechnet' : 'in den Einstellungen deaktiviert — wird NICHT eingerechnet'}
+            >
+              <span className="w-4 text-gray-400">{offen.has(g.art) ? '▾' : '▸'}</span>
+              <span className={`font-medium ${g.aktiv ? 'text-gray-800' : 'text-gray-400 line-through'}`}>
+                {KOSTENART_LABEL[g.art]}
+              </span>
+              <span className="text-xs text-gray-400">
+                ({g.eintraege.length} {g.eintraege.length === 1 ? 'Buchung' : 'Buchungen'})
+              </span>
+              <span className={`ml-auto font-semibold ${g.aktiv ? 'text-gray-900' : 'text-gray-400 line-through'}`}>
+                {euro(g.summe)}
+              </span>
+            </button>
+
+            {offen.has(g.art) && (
+              <table className="mb-2 w-full text-sm">
+                <tbody>
+                  {g.eintraege.map((k) => (
+                    <tr key={k.id} className="border-b border-gray-50">
+                      <td className="w-24 py-1 pl-6 align-top whitespace-nowrap text-gray-600">{datum(k.datum)}</td>
+                      <td className="max-w-0 truncate py-1 pr-2 text-gray-500" title={k.beschreibung ?? ''}>
+                        {k.beschreibung || '—'}
+                      </td>
+                      <td className="py-1 text-right align-top whitespace-nowrap">{euro(k.betragNetto)}</td>
+                      <td className="w-8 py-1 text-right align-top">
+                        <button onClick={() => loeschen(k.id)} className="-my-1 rounded px-2 py-1 text-red-500 hover:bg-red-50" title="Eintrag löschen">×</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        ))}
+      </div>
       <div className="mt-3 flex flex-wrap gap-2">
         <input type="date" lang="de-DE" className={inp} value={datumF} onChange={(e) => setDatumF(e.target.value)} />
         <GeldInput className={`${inp} w-28`} value={betrag} onChange={setBetrag} />
