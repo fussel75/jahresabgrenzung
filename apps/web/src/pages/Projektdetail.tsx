@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { parseISO } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -36,16 +36,36 @@ export function Projektdetail() {
   const [laedt, setLaedt] = useState(true);
   const [bearbeiten, setBearbeiten] = useState(false);
 
+  // Schieberegler "Manueller Grad" (0–100 %): rechnet den Methodenvergleich
+  // live beim Ziehen um und speichert entprellt nach dem Loslassen.
+  const [gradProzent, setGradProzent] = useState(0);
+  const [gradGespeichert, setGradGespeichert] = useState(false);
+  const gradTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   async function laden() {
     if (!id) return;
     const p = await api.projekt(id);
     setProjekt(p);
+    setGradProzent(Math.round((p.fertigstellungGradManuell ?? 0) * 100));
     setLaedt(false);
   }
   useEffect(() => {
     laden();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  function gradZiehen(prozentNeu: number) {
+    setGradProzent(prozentNeu);
+    setGradGespeichert(false);
+    if (gradTimer.current) clearTimeout(gradTimer.current);
+    gradTimer.current = setTimeout(async () => {
+      if (!id) return;
+      await api.projektAendern(id, { fertigstellungGradManuell: prozentNeu / 100 });
+      setProjekt((alt) => (alt ? { ...alt, fertigstellungGradManuell: prozentNeu / 100 } : alt));
+      setGradGespeichert(true);
+      setTimeout(() => setGradGespeichert(false), 2000);
+    }, 600);
+  }
 
   const vergleich = useMemo(() => {
     if (!projekt || !gj) return null;
@@ -54,13 +74,15 @@ export function Projektdetail() {
     input.kostenpositionen = input.kostenpositionen?.filter(
       (k) => !k.art || aktiveArten.has(k.art as KostenArt),
     );
+    // Schieberegler-Wert live einrechnen (auch vor dem Speichern).
+    input.fertigstellungGradManuell = gradProzent / 100;
     return berechneAlleMethoden(input, {
       jahr: gj.jahr,
       beginn: parseISO(gj.beginn),
       ende: parseISO(gj.ende),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projekt, gj, einstellungen?.kostenartenAktiv]);
+  }, [projekt, gj, einstellungen?.kostenartenAktiv, gradProzent]);
 
   if (laedt) return <Spinner />;
   if (!projekt) return <LeerHinweis>Projekt nicht gefunden.</LeerHinweis>;
@@ -194,6 +216,28 @@ export function Projektdetail() {
         <Card>
           <h2 className="mb-3 font-semibold text-anthrazit">Abgrenzung — Methodenvergleich {gj?.jahr}</h2>
           <HgbWarnung methode={methode} />
+
+          {/* Schieberegler: manueller Fertigstellungsgrad, live + Auto-Speichern */}
+          {bedarf && (
+            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-gray-50 p-3">
+              <span className="text-sm font-medium text-gray-700">Manueller Grad</span>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                value={gradProzent}
+                onChange={(e) => gradZiehen(Number(e.target.value))}
+                className="h-2 min-w-[140px] flex-1 cursor-pointer accent-anthrazit"
+                aria-label="Manueller Fertigstellungsgrad in Prozent"
+              />
+              <span className="w-14 text-right text-sm font-semibold text-anthrazit">{gradProzent} %</span>
+              <span className={`text-xs ${gradGespeichert ? 'text-green-600' : 'text-gray-400'}`}>
+                {gradGespeichert ? '✓ gespeichert' : 'wirkt auf Zeile „Manuell" — speichert automatisch'}
+              </span>
+            </div>
+          )}
+
           <div className="mt-3 overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="border-b text-left text-xs uppercase text-gray-500">
