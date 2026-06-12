@@ -73,11 +73,32 @@ export function Dashboard() {
       <HgbWarnung methode={methode} />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <KpiCard label="Laufende Projekte" wert={String(anzahlLaufend)} />
-        <KpiCard label="Volumen abzugrenzen" wert={euro(volumenAbzugrenzen)} hinweis={`${abgrenzbar.length} Projekte`} />
-        <KpiCard label="Unfertige Leistungen" wert={euro(ergebnis.summen.unfertigeLeistungen)} />
-        <KpiCard label="ARAP" wert={euro(ergebnis.summen.arap)} />
-        <KpiCard label="PRAP" wert={euro(ergebnis.summen.prap)} />
+        <KpiCard
+          label="Laufende Projekte"
+          wert={String(anzahlLaufend)}
+          erklaerung={'Anzahl der Projekte mit Status „Laufend" — unabhängig vom gewählten Geschäftsjahr.'}
+        />
+        <KpiCard
+          label="Volumen abzugrenzen"
+          wert={euro(volumenAbzugrenzen)}
+          hinweis={`${abgrenzbar.length} Projekte`}
+          erklaerung={`Gesamte Auftragssumme der Projekte, die über den Jahreswechsel ${gj.jahr}/${gj.jahr + 1} laufen (Start bis 31.12.${gj.jahr}, Ende danach). Stellhebel: voraussichtliches/tatsächliches Projektende.`}
+        />
+        <KpiCard
+          label="Unfertige Leistungen"
+          wert={euro(ergebnis.summen.unfertigeLeistungen)}
+          erklaerung={`Bis zum Stichtag 31.12.${gj.jahr} angefallene Kosten der abzugrenzenden Projekte, die noch nicht als Aufwand wirksam sind. Sie werden in der Bilanz aktiviert und neutralisieren den Aufwand im Stichjahr (v. a. bei Completed Contract). Stellhebel: Kostenarten-Schalter in den Einstellungen (§ 255 HGB, Wertunter-/-obergrenze).`}
+        />
+        <KpiCard
+          label="ARAP"
+          wert={euro(ergebnis.summen.arap)}
+          erklaerung={'Aktive Rechnungsabgrenzung: Der nach der gewählten Methode anerkannte Aufwand übersteigt die tatsächlich angefallenen Kosten. Tritt v. a. bei der zeitanteiligen Methode auf; bei Completed Contract i. d. R. 0.'}
+        />
+        <KpiCard
+          label="PRAP"
+          wert={euro(ergebnis.summen.prap)}
+          erklaerung={`Erhaltene Abschläge/Anzahlungen, denen bis 31.12.${gj.jahr} noch kein realisierter Ertrag gegenübersteht — sie werden als Verbindlichkeit passiviert. Sinkt, je mehr Ertrag im Stichjahr realisiert wird (Methode, manueller Grad, Projektende).`}
+        />
       </div>
 
       <Card>

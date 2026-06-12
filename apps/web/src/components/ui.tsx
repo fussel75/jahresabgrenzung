@@ -22,18 +22,44 @@ export function AbgrenzungsBadge({ bedarf }: { bedarf: boolean }) {
   );
 }
 
-export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
+export function Card({
+  children,
+  className = '',
+  title,
+}: {
+  children: ReactNode;
+  className?: string;
+  title?: string;
+}) {
   return (
-    <div className={`rounded-xl border border-gray-200 bg-white p-4 shadow-sm ${className}`}>
+    <div className={`rounded-xl border border-gray-200 bg-white p-4 shadow-sm ${className}`} title={title}>
       {children}
     </div>
   );
 }
 
-export function KpiCard({ label, wert, hinweis }: { label: string; wert: string; hinweis?: string }) {
+export function KpiCard({
+  label,
+  wert,
+  hinweis,
+  erklaerung,
+}: {
+  label: string;
+  wert: string;
+  hinweis?: string;
+  /** Kurzerklärung als Mouseover-Tooltip (was bedeutet/bewirkt der Wert?). */
+  erklaerung?: string;
+}) {
   return (
-    <Card className="flex flex-col gap-1">
-      <span className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</span>
+    <Card className="flex flex-col gap-1" title={erklaerung}>
+      <span className="flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-gray-500">
+        {label}
+        {erklaerung && (
+          <span className="cursor-help text-gray-300" aria-label={erklaerung}>
+            ⓘ
+          </span>
+        )}
+      </span>
       <span className="text-2xl font-bold text-anthrazit">{wert}</span>
       {hinweis && <span className="text-xs text-gray-400">{hinweis}</span>}
     </Card>
