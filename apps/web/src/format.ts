@@ -1,5 +1,6 @@
 import { format, parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { anzeigeBelegnummer } from '@jahresabgrenzung/shared';
 
 /** Deutsches Währungsformat: 1.234,56 € */
 const euroFormatter = new Intl.NumberFormat('de-DE', {
@@ -19,6 +20,24 @@ const prozentFormatter = new Intl.NumberFormat('de-DE', {
 
 export function prozent(wert: number | null | undefined): string {
   return `${prozentFormatter.format(wert ?? 0)} %`;
+}
+
+/**
+ * Rechnungsnummer fürs Anzeigen aufbereiten: HAPAK-Schlüssel (`RZZ25000053`)
+ * werden in die menschliche Form (`25-00053`) gewandelt, alles andere bleibt.
+ * Akzeptiert ein optionales Datum als Jahres-Fallback für alte Schlüssel.
+ */
+export function rechnungsnummer(
+  roh: string | null | undefined,
+  belegdatum?: string | Date | null,
+): string {
+  if (!roh) return '';
+  const d = belegdatum
+    ? typeof belegdatum === 'string'
+      ? parseISO(belegdatum)
+      : belegdatum
+    : undefined;
+  return anzeigeBelegnummer(roh, d);
 }
 
 /** Datum TT.MM.JJJJ */

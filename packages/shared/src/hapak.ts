@@ -75,6 +75,49 @@ export function istSammelprojekt(projektnummer: string | null | undefined): bool
   return p !== null && p.lfdNr === 1;
 }
 
+/**
+ * Wandelt eine HAPAK-interne Belegnummer (z. B. `RZZ25000053`, `AY00012`)
+ * in die menschliche Anzeigenummer aus der echten Rechnung (`25-00053`,
+ * `24-00012`).
+ *
+ * Zwei beobachtete Formate:
+ *  - Neu (ab ~2025): `<1–3 Buchst.> + <JJ> + <6 Ziffern lfd. Nr.>`,
+ *    z. B. `RZZ25000053` → Jahr 25, lfd 000053. Anzeige nutzt die letzten
+ *    5 Ziffern: `25-00053`.
+ *  - Alt: `<1–2 Buchst.> + <5 Ziffern lfd. Nr.>`, z. B. `RY00017`. Jahr
+ *    steckt im Buchstaben (Y=24, X=23 …) und ist hieraus nicht eindeutig
+ *    rekonstruierbar → Jahr aus `belegdatum` ableiten.
+ *  - Ohne ermittelbares Jahr wird nur die lfd. Nummer zurückgegeben.
+ *  - Bei nicht parsbaren Eingaben wird die Originalnummer (getrimmt) zurückgegeben.
+ */
+export function anzeigeBelegnummer(
+  roh: string | null | undefined,
+  belegdatum?: Date | null,
+): string {
+  const s = (roh ?? '').trim();
+  if (!s) return '';
+  const m = s.match(/^([A-Za-z]{1,3})?(\d+)$/);
+  if (!m) return s;
+  const ziffern = m[2];
+
+  let jahr = '';
+  let lfdNr: string;
+
+  if (ziffern.length >= 7) {
+    // Neues Format mit Jahr im Schlüssel: JJ + lfd. Nummer (5–6 Ziffern).
+    jahr = ziffern.slice(0, 2);
+    lfdNr = ziffern.slice(2).replace(/^0+/, '').padStart(5, '0');
+  } else {
+    // Altes Format: Buchstabe trägt das Jahr; Jahr aus Belegdatum übernehmen.
+    lfdNr = ziffern.padStart(5, '0');
+    if (belegdatum instanceof Date) {
+      jahr = String(belegdatum.getFullYear()).slice(-2);
+    }
+  }
+
+  return jahr ? `${jahr}-${lfdNr}` : lfdNr;
+}
+
 // --- Abschlag-Delta-Logik (kritischer Teil) -------------------------------
 
 export interface AbschlagEingang {

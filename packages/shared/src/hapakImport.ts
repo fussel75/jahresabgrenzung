@@ -1,5 +1,5 @@
 import { round2 } from './abgrenzung.js';
-import { mapHapakDokumentTyp } from './hapak.js';
+import { mapHapakDokumentTyp, anzeigeBelegnummer } from './hapak.js';
 import type { KostenArt, ZahlungsArt } from './types.js';
 
 /**
@@ -322,6 +322,8 @@ export function mappeHapakImport(
         .map((f) => ({
           datum: f.belegdat,
           betragNetto: round2(f.netto),
+          // Eingangsrechnungs-Nummern kommen vom Lieferanten und werden
+          // unveraendert uebernommen (kein HAPAK-Schluessel-Format).
           rechnungsNr: f.rnr.trim(),
           lieferant: f.adrSuch.trim(),
           beschreibung: f.betreff.trim(),
@@ -340,7 +342,9 @@ export function mappeHapakImport(
         bezahlt: round2(f.zahlung),
         offen: round2(f.offen),
         art: dok ? hapakTypZuZahlungsart(dok.typundnr) : 'SCHLUSSRECHNUNG',
-        rechnungsNr: f.rnr.trim(),
+        // Ausgangsrechnungs-Nummer in das menschliche Anzeigeformat wandeln
+        // (RZZ25000053 -> 25-00053), wie auf der ausgedruckten Rechnung.
+        rechnungsNr: anzeigeBelegnummer(f.rnr.trim(), f.belegdat),
         beschreibung: f.betreff.trim(),
       });
     }
@@ -351,7 +355,7 @@ export function mappeHapakImport(
         bezahlt: round2(-Math.abs(f.zahlung)),
         offen: round2(f.offen),
         art: 'STORNO',
-        rechnungsNr: f.rnr.trim(),
+        rechnungsNr: anzeigeBelegnummer(f.rnr.trim(), f.belegdat),
         beschreibung: f.betreff.trim(),
       });
     }

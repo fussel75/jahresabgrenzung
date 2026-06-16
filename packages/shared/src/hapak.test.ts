@@ -4,6 +4,7 @@ import {
   parseProjektnummer,
   istSammelprojekt,
   berechneAbschlagDeltas,
+  anzeigeBelegnummer,
 } from './hapak.js';
 
 const d = (iso: string) => new Date(`${iso}T00:00:00`);
@@ -85,5 +86,31 @@ describe('berechneAbschlagDeltas (kumulativ -> echter Betrag)', () => {
       { dokumentnummer: 'A1', datum: d('2026-03-01'), kumulativeNetto: 8000 },
     ]);
     expect(r[0].deltaNetto).toBe(8000);
+  });
+});
+
+describe('anzeigeBelegnummer (HAPAK-Schluessel -> menschliche Belegnummer)', () => {
+  it('PZZ/RZZ-Format: Praefix + 2-stelliges Jahr im Schluessel', () => {
+    // Verifiziert am echten Beispiel "Rechnung 25-00053" (Ben Ritter, 10.07.2025).
+    expect(anzeigeBelegnummer('RZZ25000053')).toBe('25-00053');
+    expect(anzeigeBelegnummer('PZZ25000003')).toBe('25-00003');
+    expect(anzeigeBelegnummer('PZZ26000010')).toBe('26-00010');
+  });
+
+  it('altes Format (Buchstabe = Jahr): Jahr aus Belegdatum ableiten', () => {
+    // "AL00008" (2011), "RY00017" (2024) — Jahr steckt im Buchstaben.
+    expect(anzeigeBelegnummer('AL00008', d('2011-04-29'))).toBe('11-00008');
+    expect(anzeigeBelegnummer('RY00017', d('2024-02-02'))).toBe('24-00017');
+    expect(anzeigeBelegnummer('PY00002', d('2024-04-02'))).toBe('24-00002');
+  });
+
+  it('ohne Datum bleibt das Jahr leer (Fallback: nur lfd. Nummer)', () => {
+    expect(anzeigeBelegnummer('RY00017')).toBe('00017');
+  });
+
+  it('leerer/ungueltiger Input', () => {
+    expect(anzeigeBelegnummer('')).toBe('');
+    expect(anzeigeBelegnummer(null)).toBe('');
+    expect(anzeigeBelegnummer('abc/123')).toBe('abc/123');
   });
 });

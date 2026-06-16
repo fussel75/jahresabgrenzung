@@ -12,7 +12,7 @@ import {
 import { api, type Projekt } from '../api';
 import { useAppState } from '../state';
 import { effektiverZeitraum, projektZuBerechnung, istAbzugrenzen } from '../hooks';
-import { euro, datum, prozent } from '../format';
+import { euro, datum, prozent, rechnungsnummer } from '../format';
 import {
   METHODE_KURZ,
   METHODE_HGB_WARNUNG,
@@ -433,7 +433,7 @@ function Zahlungen({ projekt, onAenderung }: { projekt: Projekt; onAenderung: ()
             <tr key={z.id} className="border-b border-gray-100">
               <td className="py-1 whitespace-nowrap">{datum(z.datum)}</td>
               <td className="py-1">{ZAHLUNGSART_LABEL[z.art]}</td>
-              <td className="py-1 font-mono text-xs text-gray-600" title="Rechnungsnummer">{z.rechnungsNr || '—'}</td>
+              <td className="py-1 font-mono text-xs text-gray-600" title="Rechnungsnummer">{rechnungsnummer(z.rechnungsNr, z.datum) || '—'}</td>
               <td className="py-1 text-right">{euro(z.betragNetto)}</td>
               <td className="py-1 text-right"><button onClick={() => loeschen(z.id)} className="-my-1 rounded px-2 py-1 text-red-500 hover:bg-red-50" title="Eintrag löschen">×</button></td>
             </tr>
@@ -555,7 +555,7 @@ function Kostenpositionen({
                     <tr key={k.id} className="border-b border-gray-50">
                       <td className="w-24 py-1 pl-6 align-top whitespace-nowrap text-gray-600">{datum(k.datum)}</td>
                       <td className="w-28 py-1 pr-2 align-top whitespace-nowrap font-mono text-xs text-gray-600" title="Rechnungsnummer (im HAPAK nachschlagen)">
-                        {k.rechnungsNr || '—'}
+                        {rechnungsnummer(k.rechnungsNr, k.datum) || '—'}
                       </td>
                       <td className="max-w-0 truncate py-1 pr-2 text-gray-500" title={k.beschreibung ?? ''}>
                         {k.beschreibung || '—'}
