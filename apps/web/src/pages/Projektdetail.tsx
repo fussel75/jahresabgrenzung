@@ -483,6 +483,10 @@ function Kostenpositionen({
     await api.kostenpositionLoeschen(id);
     onAenderung();
   }
+  async function artAendern(id: string, art: KostenArt) {
+    await api.kostenpositionAendern(id, { art });
+    onAenderung();
+  }
 
   // Gruppierung nach Kostenart (Summenzeile, ausklappbar zu den Einzelbuchungen).
   const aktivByArt = new Map(zusammenfassung.map((z) => [z.art, z.aktiv]));
@@ -559,6 +563,18 @@ function Kostenpositionen({
                       </td>
                       <td className="max-w-0 truncate py-1 pr-2 text-gray-500" title={k.beschreibung ?? ''}>
                         {k.beschreibung || '—'}
+                      </td>
+                      <td className="w-28 py-1 pr-2 align-top">
+                        <select
+                          value={k.art}
+                          onChange={(e) => artAendern(k.id, e.target.value as KostenArt)}
+                          className="w-full rounded border border-transparent bg-transparent px-1 py-0.5 text-xs text-gray-600 hover:border-gray-300 focus:border-anthrazit"
+                          title="Kostenart aendern"
+                        >
+                          {ALLE_KOSTENARTEN.map((a) => (
+                            <option key={a} value={a}>{KOSTENART_LABEL[a]}</option>
+                          ))}
+                        </select>
                       </td>
                       <td className="py-1 text-right align-top whitespace-nowrap">{euro(k.betragNetto)}</td>
                       <td className="w-8 py-1 text-right align-top">

@@ -186,6 +186,11 @@ export const api = {
     }),
   kostenpositionLoeschen: (id: string) =>
     request<void>(`/kostenpositionen/${id}`, { method: 'DELETE' }),
+  kostenpositionAendern: (id: string, daten: { art?: KostenArt; beschreibung?: string | null; rechnungsNr?: string | null }) =>
+    request<Kostenposition>(`/kostenpositionen/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(daten),
+    }),
 
   // Geschäftsjahre
   geschaeftsjahre: () => request<Geschaeftsjahr[]>('/geschaeftsjahre'),
