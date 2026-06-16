@@ -214,9 +214,13 @@ function hapakTypZuZahlungsart(typundnr: string): ZahlungsArt {
     case 'GUTSCHRIFT':
       return 'STORNO';
     case 'SCHLUSSRECHNUNG':
-    case 'RECHNUNG':
-    default:
       return 'SCHLUSSRECHNUNG';
+    case 'RECHNUNG':
+      return 'RECHNUNG';
+    default:
+      // Fallback (Eingangsrechnung sollte hier nicht ankommen, weil wir nur
+      // RA verarbeiten): wie eine normale Rechnung behandeln.
+      return 'RECHNUNG';
   }
 }
 

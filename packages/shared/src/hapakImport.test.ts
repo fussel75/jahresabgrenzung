@@ -80,11 +80,30 @@ describe('mappeHapakImport', () => {
     const r = mappeHapakImport(dokumente, fibu, adr, { abJahr: 2024 });
     const z = r[0].zahlungen;
     expect(z).toHaveLength(2);
-    expect(z.find((x) => x.rechnungsNr === 'RY17')?.art).toBe('ABSCHLAG');
-    expect(z.find((x) => x.rechnungsNr === 'RY40')?.art).toBe('SCHLUSSRECHNUNG');
+    // Rechnungsnummern werden ins menschliche Anzeigeformat gewandelt
+    // (RY17 mit Belegdatum 02/2026 -> "26-00017").
+    expect(z.find((x) => x.rechnungsNr === '26-00017')?.art).toBe('ABSCHLAG');
+    expect(z.find((x) => x.rechnungsNr === '27-00040')?.art).toBe('SCHLUSSRECHNUNG');
     // Ende = Schlussrechnungsdatum, läuft = false
     expect(r[0].enddatum).toEqual(d('2027-01-15'));
     expect(r[0].laeuft).toBe(false);
+  });
+
+  it('"Rechnung" (ohne Abschlag/Schluss) wird als RECHNUNG erfasst, nicht als SCHLUSSRECHNUNG', () => {
+    // Echtes Beispiel: 25-00032, 25-00045, 26-00045 sind im Projekt Farmsener
+    // Landstr. ganz normale Einzelrechnungen, keine Schlussrechnungen.
+    const dokumente = [
+      dok({ name: 'R32', projname: 'PX1', typundnr: 'Rechnung 25-00032', datum: d('2025-04-17') }),
+      dok({ name: 'R45', projname: 'PX1', typundnr: 'Rechnung 25-00045', datum: d('2025-06-04') }),
+    ];
+    const fibu = [
+      fib({ art: 'RA', typ: 'HR', ktr: 'PX1', rnr: 'R32', netto: 2500, belegdat: d('2025-04-17') }),
+      fib({ art: 'RA', typ: 'HR', ktr: 'PX1', rnr: 'R45', netto: 325, belegdat: d('2025-06-04') }),
+    ];
+    const r = mappeHapakImport(dokumente, fibu, adr, { abJahr: 2024 });
+    expect(r[0].zahlungen.every((z) => z.art === 'RECHNUNG')).toBe(true);
+    // Projekt gilt trotzdem als laufend (keine echte Schlussrechnung).
+    expect(r[0].laeuft).toBe(true);
   });
 
   it('ohne Schlussrechnung gilt das Projekt als laufend', () => {

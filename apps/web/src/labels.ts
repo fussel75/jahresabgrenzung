@@ -55,6 +55,7 @@ export const METHODE_HGB_WARNUNG: Record<Abgrenzungsmethode, boolean> = {
 export const ZAHLUNGSART_LABEL: Record<ZahlungsArt, string> = {
   ANZAHLUNG: 'Anzahlung',
   ABSCHLAG: 'Abschlag',
+  RECHNUNG: 'Rechnung',
   SCHLUSSRECHNUNG: 'Schlussrechnung',
   STORNO: 'Storno',
 };

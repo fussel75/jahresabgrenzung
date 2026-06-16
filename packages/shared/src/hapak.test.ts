@@ -108,6 +108,15 @@ describe('anzeigeBelegnummer (HAPAK-Schluessel -> menschliche Belegnummer)', () 
     expect(anzeigeBelegnummer('RY00017')).toBe('00017');
   });
 
+  it('rein numerische Eingabe = Lieferanten-Rechnungsnr -> unveraendert', () => {
+    // Echte Beispiele aus dem Rechnungseingangsbuch (Holz Junge, GC Gruppe etc.):
+    expect(anzeigeBelegnummer('644397', d('2025-04-12'))).toBe('644397');
+    expect(anzeigeBelegnummer('645206', d('2025-05-03'))).toBe('645206');
+    expect(anzeigeBelegnummer('718874', d('2011-04-28'))).toBe('718874');
+    // 5-stellige Lieferanten-Nr ohne Buchstaben: weiterhin unangetastet.
+    expect(anzeigeBelegnummer('25008', d('2025-05-09'))).toBe('25008');
+  });
+
   it('leerer/ungueltiger Input', () => {
     expect(anzeigeBelegnummer('')).toBe('');
     expect(anzeigeBelegnummer(null)).toBe('');

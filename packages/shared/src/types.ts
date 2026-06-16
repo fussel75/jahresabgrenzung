@@ -30,6 +30,7 @@ export type Gewerk = (typeof Gewerk)[keyof typeof Gewerk];
 export const ZahlungsArt = {
   ANZAHLUNG: 'ANZAHLUNG',
   ABSCHLAG: 'ABSCHLAG',
+  RECHNUNG: 'RECHNUNG', // normale Einzelrechnung (keine Teilrechnung)
   SCHLUSSRECHNUNG: 'SCHLUSSRECHNUNG',
   STORNO: 'STORNO',
 } as const;

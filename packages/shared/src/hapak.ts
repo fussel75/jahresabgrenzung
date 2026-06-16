@@ -96,7 +96,10 @@ export function anzeigeBelegnummer(
 ): string {
   const s = (roh ?? '').trim();
   if (!s) return '';
-  const m = s.match(/^([A-Za-z]{1,3})?(\d+)$/);
+  const m = s.match(/^([A-Za-z]{1,3})(\d+)$/);
+  // Ohne Buchstaben-Praefix ist es keine HAPAK-interne Belegnummer
+  // (sondern z.B. eine Lieferanten-Rechnungsnummer wie 644397).
+  // -> unveraendert zurueckgeben.
   if (!m) return s;
   const ziffern = m[2];
 

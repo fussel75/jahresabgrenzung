@@ -558,8 +558,10 @@ function Kostenpositionen({
                   {g.eintraege.map((k) => (
                     <tr key={k.id} className="border-b border-gray-50">
                       <td className="w-24 py-1 pl-6 align-top whitespace-nowrap text-gray-600">{datum(k.datum)}</td>
-                      <td className="w-28 py-1 pr-2 align-top whitespace-nowrap font-mono text-xs text-gray-600" title="Rechnungsnummer (im HAPAK nachschlagen)">
-                        {rechnungsnummer(k.rechnungsNr, k.datum) || '—'}
+                      <td className="w-28 py-1 pr-2 align-top whitespace-nowrap font-mono text-xs text-gray-600" title="Lieferanten-Rechnungsnummer (im Büro nachschlagen)">
+                        {/* Bei Eingangsrechnungen die echte Lieferanten-Nummer
+                            unveraendert anzeigen (kein HAPAK-Format anwenden). */}
+                        {k.rechnungsNr || '—'}
                       </td>
                       <td className="max-w-0 truncate py-1 pr-2 text-gray-500" title={k.beschreibung ?? ''}>
                         {k.beschreibung || '—'}
