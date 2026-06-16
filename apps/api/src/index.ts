@@ -11,6 +11,7 @@ import { einstellungenRouter } from './routes/einstellungen.js';
 import { abgrenzungRouter } from './routes/abgrenzung.js';
 import { eintraegeRouter } from './routes/eintraege.js';
 import { importRouter } from './routes/import.js';
+import { szenarienRouter } from './routes/szenarien.js';
 
 const app = express();
 const port = Number(process.env.PORT ?? 3000);
@@ -37,6 +38,7 @@ app.use('/api/geschaeftsjahre', geschaeftsjahreRouter);
 app.use('/api/einstellungen', einstellungenRouter);
 app.use('/api/abgrenzung', abgrenzungRouter);
 app.use('/api/import', importRouter);
+app.use('/api/szenarien', szenarienRouter);
 app.use('/api', eintraegeRouter); // /api/zahlungen/:id, /api/kostenpositionen/:id
 
 // Frontend ausliefern, falls gebaut (apps/web/dist). Im Dev läuft Vite separat.

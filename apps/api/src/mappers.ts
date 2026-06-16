@@ -59,3 +59,4 @@ export function serializeZahlung(z: Zahlung) {
 export function serializeKostenposition(k: Kostenposition) {
   return { ...k, betragNetto: dec(k.betragNetto) };
 }
+// rechnungsNr ist nun fester Bestandteil; durch ...k bereits enthalten.

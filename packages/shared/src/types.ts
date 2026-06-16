@@ -100,6 +100,7 @@ export const kostenpositionSchema = z.object({
   datum: isoDate,
   betragNetto: geldBetrag,
   art: z.nativeEnum(KostenArt),
+  rechnungsNr: z.string().optional().nullable(),
   beschreibung: z.string().optional().nullable(),
 });
 export type KostenpositionInput = z.infer<typeof kostenpositionSchema>;

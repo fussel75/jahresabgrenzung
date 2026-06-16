@@ -25,7 +25,19 @@ export interface Kostenposition {
   datum: string;
   betragNetto: number;
   art: KostenArt;
+  rechnungsNr?: string | null;
   beschreibung?: string | null;
+}
+
+export interface Szenario {
+  id: string;
+  name: string;
+  beschreibung?: string | null;
+  methode: Abgrenzungsmethode;
+  kostenartenAktiv?: string | null;
+  anzahlProjekte: number;
+  erstelltAm: string;
+  geaendertAm: string;
 }
 
 export interface Projekt {
@@ -214,6 +226,22 @@ export const api = {
     if (daten && Array.isArray(daten.projekte)) return daten as HapakVorschauErgebnis;
     throw new ApiError(res.status, daten?.fehler ?? res.statusText);
   },
+
+  // Szenarien
+  szenarien: () => request<Szenario[]>('/szenarien'),
+  szenarioSpeichern: (daten: { name: string; beschreibung?: string | null; methode: string }) =>
+    request<Szenario>('/szenarien', { method: 'POST', body: JSON.stringify(daten) }),
+  szenarioAktualisieren: (id: string, methode: string) =>
+    request<{ ok: boolean; anzahlProjekte: number }>(
+      `/szenarien/${id}/aktualisieren`,
+      { method: 'POST', body: JSON.stringify({ methode }) },
+    ),
+  szenarioAnwenden: (id: string) =>
+    request<{ ok: boolean; projekteAktualisiert: number; methode: string }>(
+      `/szenarien/${id}/anwenden`,
+      { method: 'POST' },
+    ),
+  szenarioLoeschen: (id: string) => request<void>(`/szenarien/${id}`, { method: 'DELETE' }),
 
   hapakUebernehmen: async (
     abJahr: number,

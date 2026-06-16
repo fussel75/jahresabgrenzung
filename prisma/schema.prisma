@@ -21,6 +21,29 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Szenario {
+  id               String            @id @default(cuid())
+  name             String            @unique
+  beschreibung     String?
+  methode          String // gewählte Abgrenzungsmethode (Snapshot)
+  kostenartenAktiv String? // CSV; null = alle Kostenarten aktiv
+  erstelltAm       DateTime          @default(now())
+  geaendertAm      DateTime          @updatedAt
+  projekte         SzenarioProjekt[]
+}
+
+model SzenarioProjekt {
+  id                        String   @id @default(cuid())
+  szenarioId                String
+  szenario                  Szenario @relation(fields: [szenarioId], references: [id], onDelete: Cascade)
+  projektId                 String
+  projekt                   Projekt  @relation(fields: [projektId], references: [id], onDelete: Cascade)
+  fertigstellungGradManuell Float?
+  enddatumGeplant           DateTime?
+
+  @@unique([szenarioId, projektId])
+}
+
 model Projekt {
   id                        String           @id @default(cuid())
   projektnummer             String           @unique
@@ -47,6 +70,7 @@ model Projekt {
   hapakProjname             String?          @unique
   zahlungen                 Zahlung[]
   kostenpositionen          Kostenposition[]
+  szenarien                 SzenarioProjekt[]
   erstelltAm                DateTime         @default(now())
   geaendertAm               DateTime         @updatedAt
 }
@@ -69,6 +93,7 @@ model Kostenposition {
   datum        DateTime
   betragNetto  Decimal
   art          String // KostenArt: MATERIAL | LOHN | SUBUNTERNEHMER | FREMDLEISTUNG | SONSTIGES
+  rechnungsNr  String? // Lieferanten-Rechnungsnummer (zum Nachschlagen im HAPAK)
   beschreibung String?
 }
 

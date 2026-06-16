@@ -137,18 +137,20 @@ export async function speichereImport(
         .filter((k) => k.datum != null)
         .map((k) => {
           const text = [k.lieferant, k.beschreibung].filter(Boolean).join(' — ');
-          const zusatz = [k.rechnungsNr ? `Rg. ${k.rechnungsNr}` : '', k.konto ? `Kto ${k.konto}` : '']
-            .filter(Boolean)
-            .join(', ');
+          // Konto-Hinweis bleibt in der Beschreibung (für Nachvollziehbarkeit),
+          // die Rechnungsnummer steht jetzt aber in einem eigenen Feld.
           const beschreibung = text
-            ? `${text}${zusatz ? ` (${zusatz})` : ''}`
-            : zusatz || null;
+            ? `${text}${k.konto ? ` (Kto ${k.konto})` : ''}`
+            : k.konto
+            ? `Kto ${k.konto}`
+            : null;
           return {
             projektId,
             datum: k.datum as Date,
             betragNetto: k.betragNetto,
             // Kostenart aus dem HAPAK-Aufwandskonto (54xx Material, 59xx Fremdleistung).
             art: k.art,
+            rechnungsNr: k.rechnungsNr || null,
             beschreibung,
           };
         });

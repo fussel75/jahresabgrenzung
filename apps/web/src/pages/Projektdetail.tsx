@@ -431,13 +431,14 @@ function Zahlungen({ projekt, onAenderung }: { projekt: Projekt; onAenderung: ()
         <tbody>
           {(projekt.zahlungen ?? []).map((z) => (
             <tr key={z.id} className="border-b border-gray-100">
-              <td className="py-1">{datum(z.datum)}</td>
+              <td className="py-1 whitespace-nowrap">{datum(z.datum)}</td>
               <td className="py-1">{ZAHLUNGSART_LABEL[z.art]}</td>
+              <td className="py-1 font-mono text-xs text-gray-600" title="Rechnungsnummer">{z.rechnungsNr || '—'}</td>
               <td className="py-1 text-right">{euro(z.betragNetto)}</td>
               <td className="py-1 text-right"><button onClick={() => loeschen(z.id)} className="-my-1 rounded px-2 py-1 text-red-500 hover:bg-red-50" title="Eintrag löschen">×</button></td>
             </tr>
           ))}
-          {(projekt.zahlungen ?? []).length === 0 && <tr><td className="py-2 text-gray-400" colSpan={4}>Keine Zahlungen erfasst.</td></tr>}
+          {(projekt.zahlungen ?? []).length === 0 && <tr><td className="py-2 text-gray-400" colSpan={5}>Keine Zahlungen erfasst.</td></tr>}
         </tbody>
       </table>
       <div className="mt-3 flex flex-wrap gap-2">
@@ -553,6 +554,9 @@ function Kostenpositionen({
                   {g.eintraege.map((k) => (
                     <tr key={k.id} className="border-b border-gray-50">
                       <td className="w-24 py-1 pl-6 align-top whitespace-nowrap text-gray-600">{datum(k.datum)}</td>
+                      <td className="w-28 py-1 pr-2 align-top whitespace-nowrap font-mono text-xs text-gray-600" title="Rechnungsnummer (im HAPAK nachschlagen)">
+                        {k.rechnungsNr || '—'}
+                      </td>
                       <td className="max-w-0 truncate py-1 pr-2 text-gray-500" title={k.beschreibung ?? ''}>
                         {k.beschreibung || '—'}
                       </td>

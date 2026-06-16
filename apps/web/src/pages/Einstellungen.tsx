@@ -10,6 +10,7 @@ import { useAppState } from '../state';
 import { METHODE_LABEL, KOSTENART_LABEL } from '../labels';
 import { datum } from '../format';
 import { Card, LeerHinweis } from '../components/ui';
+import { SzenarienKarte } from '../components/SzenarienKarte';
 
 const METHODEN: Abgrenzungsmethode[] = ['COMPLETED_CONTRACT', 'ZEITANTEILIG', 'COST_TO_COST', 'MANUELL'];
 
@@ -96,6 +97,8 @@ export function Einstellungen() {
     <div className="mx-auto max-w-3xl space-y-6">
       <h1 className="text-2xl font-bold text-anthrazit">Einstellungen</h1>
       {gespeichert && <p className="text-sm font-medium text-green-700">{gespeichert}</p>}
+
+      <SzenarienKarte />
 
       <Card>
         <h2 className="mb-3 font-semibold text-anthrazit">Geschäftsjahre</h2>
