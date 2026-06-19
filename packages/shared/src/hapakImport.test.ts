@@ -106,6 +106,16 @@ describe('mappeHapakImport', () => {
     expect(r[0].laeuft).toBe(true);
   });
 
+  it('Fallback ohne Dokument-Zuordnung ergibt RECHNUNG (nicht SCHLUSSRECHNUNG)', () => {
+    // FIBU-Eintrag ohne passendes Dokument in DOKUMENT.DBF
+    const fibu = [
+      fib({ art: 'RA', typ: 'HR', ktr: 'PX1', rnr: 'UNBEKANNT', netto: 5000, belegdat: d('2026-03-01') }),
+    ];
+    const r = mappeHapakImport([], fibu, adr, { abJahr: 2024 });
+    expect(r[0].zahlungen[0].art).toBe('RECHNUNG');
+    expect(r[0].laeuft).toBe(true);
+  });
+
   it('ohne Schlussrechnung gilt das Projekt als laufend', () => {
     const dokumente = [
       dok({ name: 'RY17', projname: 'PX1', typundnr: 'Rechnung 26-00017 (1. Abschlagsrechnung)', datum: d('2026-02-01') }),

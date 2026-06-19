@@ -77,6 +77,9 @@ async function snapshotErstellen(payload: { name: string; beschreibung?: string 
       id: true,
       fertigstellungGradManuell: true,
       enddatumGeplant: true,
+      status: true,
+      gesamtkostenGeplant: true,
+      auftragssummeNetto: true,
     },
   });
   return prisma.szenario.create({
@@ -90,6 +93,9 @@ async function snapshotErstellen(payload: { name: string; beschreibung?: string 
           projektId: p.id,
           fertigstellungGradManuell: p.fertigstellungGradManuell,
           enddatumGeplant: p.enddatumGeplant,
+          status: p.status,
+          gesamtkostenGeplant: Number(p.gesamtkostenGeplant),
+          auftragssummeNetto: Number(p.auftragssummeNetto),
         })),
       },
     },
@@ -129,7 +135,14 @@ szenarienRouter.post(
     const methode = String(req.body?.methode ?? vorhanden.methode);
     const einstellungen = await einstellungenHolen();
     const projekte = await prisma.projekt.findMany({
-      select: { id: true, fertigstellungGradManuell: true, enddatumGeplant: true },
+      select: {
+        id: true,
+        fertigstellungGradManuell: true,
+        enddatumGeplant: true,
+        status: true,
+        gesamtkostenGeplant: true,
+        auftragssummeNetto: true,
+      },
     });
     await prisma.szenarioProjekt.deleteMany({ where: { szenarioId: vorhanden.id } });
     await prisma.szenario.update({
@@ -142,6 +155,9 @@ szenarienRouter.post(
             projektId: p.id,
             fertigstellungGradManuell: p.fertigstellungGradManuell,
             enddatumGeplant: p.enddatumGeplant,
+            status: p.status,
+            gesamtkostenGeplant: Number(p.gesamtkostenGeplant),
+            auftragssummeNetto: Number(p.auftragssummeNetto),
           })),
         },
       },
@@ -208,6 +224,9 @@ szenarienRouter.post(
           data: {
             fertigstellungGradManuell: sp.fertigstellungGradManuell,
             enddatumGeplant: sp.enddatumGeplant ?? undefined,
+            ...(sp.status ? { status: sp.status } : {}),
+            ...(sp.gesamtkostenGeplant != null ? { gesamtkostenGeplant: sp.gesamtkostenGeplant } : {}),
+            ...(sp.auftragssummeNetto != null ? { auftragssummeNetto: sp.auftragssummeNetto } : {}),
           },
         });
         touched++;

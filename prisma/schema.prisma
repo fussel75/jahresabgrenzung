@@ -40,6 +40,9 @@ model SzenarioProjekt {
   projekt                   Projekt  @relation(fields: [projektId], references: [id], onDelete: Cascade)
   fertigstellungGradManuell Float?
   enddatumGeplant           DateTime?
+  status                    String?
+  gesamtkostenGeplant       Float?
+  auftragssummeNetto        Float?
 
   @@unique([szenarioId, projektId])
 }

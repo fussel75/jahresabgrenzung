@@ -345,7 +345,7 @@ export function mappeHapakImport(
         betragNetto: round2(f.netto),
         bezahlt: round2(f.zahlung),
         offen: round2(f.offen),
-        art: dok ? hapakTypZuZahlungsart(dok.typundnr) : 'SCHLUSSRECHNUNG',
+        art: dok ? hapakTypZuZahlungsart(dok.typundnr) : 'RECHNUNG',
         // Ausgangsrechnungs-Nummer in das menschliche Anzeigeformat wandeln
         // (RZZ25000053 -> 25-00053), wie auf der ausgedruckten Rechnung.
         rechnungsNr: anzeigeBelegnummer(f.rnr.trim(), f.belegdat),

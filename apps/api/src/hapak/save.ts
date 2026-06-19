@@ -95,10 +95,11 @@ export async function speichereImport(
             kundenadresse: daten.kundenadresse,
             startdatumGeplant: daten.startdatumGeplant,
             // enddatumGeplant = "voraussichtliches Ende" (manuell gepflegt) —
-            // wird beim Sync NIE überschrieben; nur das Ist-Ende (Schluss-
-            // rechnung aus HAPAK) wird aktualisiert und hat in der
-            // Berechnung ohnehin Vorrang.
-            enddatumIst: daten.enddatumIst,
+            // wird beim Sync NIE überschrieben.
+            // enddatumIst: nur setzen wenn HAPAK ein Datum liefert
+            // (Schlussrechnung); null darf ein manuell gesetztes Ende
+            // nicht löschen.
+            ...(daten.enddatumIst != null ? { enddatumIst: daten.enddatumIst } : {}),
             auftragssummeNetto: daten.auftragssummeNetto,
             istKostenStichtag: daten.istKostenStichtag,
             // projektStartManuell wird NICHT überschrieben (bleibt was es ist).
