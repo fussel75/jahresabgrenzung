@@ -439,6 +439,13 @@ function Zahlungen({ projekt, onAenderung }: { projekt: Projekt; onAenderung: ()
             </tr>
           ))}
           {(projekt.zahlungen ?? []).length === 0 && <tr><td className="py-2 text-gray-400" colSpan={5}>Keine Zahlungen erfasst.</td></tr>}
+          {(projekt.zahlungen ?? []).length > 0 && (
+            <tr className="border-t-2 border-gray-300 font-semibold">
+              <td className="py-1" colSpan={3}>Gesamt</td>
+              <td className="py-1 text-right">{euro((projekt.zahlungen ?? []).reduce((s, z) => s + z.betragNetto, 0))}</td>
+              <td />
+            </tr>
+          )}
         </tbody>
       </table>
       <div className="mt-3 flex flex-wrap gap-2">
@@ -589,6 +596,12 @@ function Kostenpositionen({
             )}
           </div>
         ))}
+        {gruppen.length > 0 && (
+          <div className="flex items-center border-t-2 border-gray-300 py-2 text-sm font-semibold">
+            <span className="text-gray-800">Gesamt</span>
+            <span className="ml-auto text-gray-900">{euro(gruppen.reduce((s, g) => s + g.summe, 0))}</span>
+          </div>
+        )}
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
         <input type="date" lang="de-DE" className={inp} value={datumF} onChange={(e) => setDatumF(e.target.value)} />
