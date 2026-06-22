@@ -102,11 +102,7 @@ export async function speichereImport(
             ...(daten.enddatumIst != null ? { enddatumIst: daten.enddatumIst } : {}),
             auftragssummeNetto: daten.auftragssummeNetto,
             istKostenStichtag: daten.istKostenStichtag,
-            // gesamtkostenGeplant: nur aktualisieren wenn der User den
-            // Default-Wert nie manuell geaendert hat (= noch gleich istKosten).
-            ...(Number(vorhanden.gesamtkostenGeplant) === Number(vorhanden.istKostenStichtag)
-              ? { gesamtkostenGeplant: daten.istKostenStichtag }
-              : {}),
+            gesamtkostenGeplant: daten.istKostenStichtag,
             // projektStartManuell wird NICHT überschrieben (bleibt was es ist).
           },
         });
